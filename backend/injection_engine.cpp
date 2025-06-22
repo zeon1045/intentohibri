@@ -3,8 +3,7 @@
  *
  * >>> ARCHIVO: backend/injection_engine.cpp <<<
  *
- * Copia y pega TODO el código de abajo en tu archivo "injection_engine.cpp".
- * (Este archivo contiene las IMPLEMENTACIONES de las funciones, con el cuerpo '{...}')
+ * (No hay cambios en este archivo. Déjalo como está).
  *
  * =====================================================================================
  */

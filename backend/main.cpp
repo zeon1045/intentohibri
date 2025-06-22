@@ -32,7 +32,7 @@ int main() {
     freopen_s(&f, "CONOUT$", "w", stderr);
     
     std::cout << "=================================================" << std::endl;
-    std::cout << "      BYOVD Professional Suite v3.1 - Backend" << std::endl;
+    std::cout << "      BYOVD Professional Suite v3.2 - Backend" << std::endl;
     std::cout << "=================================================" << std::endl;
 
     // Establecer el directorio de trabajo al del ejecutable
@@ -43,16 +43,17 @@ int main() {
     InjectionEngine engine;
     httplib::Server svr;
 
-    // Servir archivos estáticos del frontend
-    std::string frontend_path = exe_dir + "\\frontend";
-    auto ret = svr.set_mount_point("/", frontend_path.c_str());
+    // **** LA CORRECCION CLAVE ESTA AQUI ****
+    // Se usa una ruta relativa estándar, que es más robusta.
+    const char* frontend_path = "./frontend";
+    auto ret = svr.set_mount_point("/", frontend_path);
     if (!ret) {
-        std::cerr << "ERROR: La carpeta 'frontend' no existe en la misma ubicación que el .exe" << std::endl;
-        std::cerr << "Se esperaba encontrar en: " << frontend_path << std::endl;
+        std::cerr << "ERROR: La carpeta 'frontend' no existe en la misma ubicacion que el .exe" << std::endl;
+        std::cerr << "Se esperaba encontrar en: " << std::filesystem::absolute(frontend_path) << std::endl;
         system("pause");
         return 1;
     }
-    std::cout << "[SERVER] Sirviendo archivos del frontend desde: " << frontend_path << std::endl;
+    std::cout << "[SERVER] Sirviendo archivos del frontend desde: " << std::filesystem::absolute(frontend_path) << std::endl;
 
     // --- API Endpoints ---
     svr.Get("/api/status", [&](const httplib::Request&, httplib::Response& res) {

@@ -3,8 +3,7 @@
  *
  * >>> ARCHIVO: backend/injection_engine.h <<<
  *
- * Copia y pega TODO el código de abajo en tu archivo "injection_engine.h".
- * (Este archivo solo contiene DECLARACIONES de funciones, terminadas en ';')
+ * (No hay cambios en este archivo. Déjalo como está).
  *
  * =====================================================================================
  */

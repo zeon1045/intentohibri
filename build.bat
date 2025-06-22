@@ -1,7 +1,7 @@
 @echo off
 cls
 echo ========================================================
-echo   BYOVD Professional Suite v3.0 - Compilador Visual Studio
+echo   Belzebub - Professional Suite - Compilador Visual Studio
 echo ========================================================
 echo.
 
@@ -10,7 +10,8 @@ echo [INFO] Buscando la instalacion de Visual Studio...
 
 set "VSWHERE_PATH=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE_PATH%" (
-    echo [ERROR] No se encontro 'vswhere.exe'.
+    echo [ERROR] No se encontro 'vswhere.exe' en la ruta esperada.
+    echo          Asegurate de que el Instalador de Visual Studio este presente.
     goto :error
 )
 
@@ -20,20 +21,22 @@ for /f "usebackq tokens=*" %%i in (`"%VSWHERE_PATH%" -latest -requires Microsoft
 
 if not defined VS_INSTALL_PATH (
     echo [ERROR] No se pudo encontrar una instalacion de Visual Studio con las herramientas de C++.
+    echo          Abre "Visual Studio Installer" y asegurate de que la carga de trabajo
+    echo          "Desarrollo de escritorio con C++" este instalada.
     goto :error
 )
 
 set "VS_BAT_PATH=%VS_INSTALL_PATH%\VC\Auxiliary\Build\vcvars64.bat"
-
 if not exist "%VS_BAT_PATH%" (
-    echo [ERROR] No se encontro el archivo vcvars64.bat.
+    echo [ERROR] No se encontro el archivo vcvars64.bat en la ruta esperada.
+    echo          Ruta buscada: %VS_BAT_PATH%
     goto :error
 )
 
 echo [INFO] Configurando el entorno desde: "%VS_BAT_PATH%"
 call "%VS_BAT_PATH%" > nul
 if errorlevel 1 (
-    echo [ERROR] Fallo al ejecutar vcvars64.bat.
+    echo [ERROR] Fallo al ejecutar vcvars64.bat. El entorno no se pudo configurar.
     goto :error
 )
 echo [SUCCESS] Entorno de Visual Studio configurado exitosamente.
@@ -56,35 +59,36 @@ REM --- Paso 3: Compilacion de Archivos Objeto ---
 cl /std:c++17 /O2 /W3 /EHsc /MD /I"." /c "backend\main.cpp" /Fo:"%BUILD_DIR%\main.obj"
 if errorlevel 1 (
     echo [ERROR] No se pudo compilar main.cpp
-    goto :error_exit
+    goto :error
 )
 cl /std:c++17 /O2 /W3 /EHsc /MD /I"." /c "backend\injection_engine.cpp" /Fo:"%BUILD_DIR%\injection_engine.obj"
 if errorlevel 1 (
     echo [ERROR] No se pudo compilar injection_engine.cpp
-    goto :error_exit
+    goto :error
 )
 echo [SUCCESS] Fuentes compiladas a archivos objeto.
 echo.
 
-REM --- Paso 4: Enlazado del Ejecutable (Metodo Robusto) ---
+REM --- Paso 4: Enlazado del Ejecutable (Metodo Robusto con Rutas Explícitas) ---
 echo [INFO] Enlazando para crear el ejecutable...
 
+REM Construir la ruta a las librerías de MSVC manualmente
 set "MSVC_LIB_PATH=%VS_INSTALL_PATH%\VC\Tools\MSVC"
 for /d %%d in ("%MSVC_LIB_PATH%\*") do set "MSVC_LIB_PATH=%%d\lib\x64"
 
-link /OUT:"%BUILD_DIR%\BYOVD_Backend_v3.exe" ^
+link /OUT:"%BUILD_DIR%\Belzebub.exe" ^
      "%BUILD_DIR%\main.obj" "%BUILD_DIR%\injection_engine.obj" ^
      /SUBSYSTEM:CONSOLE ^
      /LIBPATH:"%MSVC_LIB_PATH%" ^
      /LIBPATH:"%UniversalCRTSdkDir%Lib\%UCRTVersion%\ucrt\x64" ^
      /LIBPATH:"%UniversalCRTSdkDir%Lib\%UCRTVersion%\um\x64" ^
-     shell32.lib user32.lib kernel32.lib ws2_32.lib advapi32.lib msvcprt.lib
+     shell32.lib user32.lib kernel32.lib ws2_32.lib advapi32.lib msvcprt.lib pdh.lib
      
 if errorlevel 1 (
     echo [ERROR] El enlazado ha fallado.
-    goto :error_exit
+    goto :error
 )
-echo [SUCCESS] Ejecutable 'BYOVD_Backend_v3.exe' creado en la carpeta 'build'.
+echo [SUCCESS] Ejecutable 'Belzebub.exe' creado en la carpeta 'build'.
 echo.
 
 REM --- Paso 5: Copia de Recursos Esenciales ---
@@ -107,17 +111,12 @@ echo      COMPILACION COMPLETADA CON EXITO
 echo ========================================================
 echo.
 echo Tu aplicacion esta lista en la carpeta 'build'.
-echo Sigue las instrucciones para crear un acceso directo.
-goto :end_success
-
-:error_exit
-echo.
-echo [FATAL] La compilacion ha fallado. Revisa los mensajes de error.
-popd
+echo Ejecuta 'Belzebub.exe' como Administrador para iniciar.
 goto :end
 
-:end_success
-popd
+:error
+echo.
+echo [FATAL] La compilacion ha fallado. Revisa los mensajes de error.
 
 :end
 echo.

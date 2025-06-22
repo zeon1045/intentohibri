@@ -1,12 +1,13 @@
-/*
- * =====================================================================================
- *
- * >>> ARCHIVO: backend/injection_engine.h <<<
- *
- * (No hay cambios en este archivo. Déjalo como está).
- *
- * =====================================================================================
- */
+//=====================================================================================
+//=====================================================================================
+//
+//   >>> INICIO DEL ARCHIVO: backend/injection_engine.h <<<
+//
+//   (No hay cambios en este archivo. Déjalo como está).
+//
+//=====================================================================================
+//=====================================================================================
+
 #pragma once
 #include <string>
 #include <vector>
@@ -26,21 +27,26 @@ struct DriverInfo {
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(DriverInfo, name, filename, tier, cve, source, description);
 };
 
+// Estructura para la lista de procesos avanzada
+struct ProcessInfo {
+    DWORD pid;
+    std::string name;
+    double cpuUsage;
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(ProcessInfo, pid, name, cpuUsage);
+};
+
 // Declaración de la clase InjectionEngine
 class InjectionEngine {
 private:
-    // --- MIEMBROS PRIVADOS ---
     std::vector<DriverInfo> drivers;
     int currentDriverIndex;
     std::string currentServiceName;
 
-    // --- MÉTODOS PRIVADOS (SOLO DECLARACIONES) ---
     void InitializeDriverDatabase();
     std::string GenerateRandomString(int length);
     bool ExecuteLuaScript(const std::string& scriptContent, DWORD processId);
 
 public:
-    // --- CONSTRUCTOR Y DESTRUCTOR ---
     InjectionEngine();
     ~InjectionEngine();
 
@@ -50,18 +56,23 @@ public:
     json UnloadDriver();
     json GetDriverInfoJson(int driverIndex);
     
-    // --- FUNCIONALIDAD PRINCIPAL CON CHEAT ENGINE ---
-    json InjectDLL(DWORD processId, const std::string& dllPath);
-    json FindProcess(const std::string& processName);
+    // --- GESTIÓN DE PROCESOS ---
+    json FindProcess(const std::string& processName); // Se mantiene por simplicidad
+    json GetProcessList(); // NUEVA FUNCIÓN AVANZADA
     
-    // --- CONTROL PROGRAMÁTICO DE CHEAT TABLE (.CT) ---
+    // --- FUNCIONALIDAD CHEAT ENGINE ---
+    json InjectDLL(DWORD processId, const std::string& dllPath);
+    json SetSpeedhack(DWORD processId, float speed);
+    
+    // --- CONTROL DE CHEAT TABLE (.CT) ---
     json LoadCheatTable(const std::string& ctFilePath, DWORD processId);
     json GetCheatTableEntries(const std::string& ctFilePath);
     json ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate);
     json SetCheatEntryValue(const std::string& ctFilePath, DWORD processId, int entryId, const std::string& value);
 
-    // --- FUNCIONES AVANZADAS DE CE ---
-    json SetSpeedhack(DWORD processId, float speed);
+    // --- NUEVO: EDITOR DE SCRIPTS ---
+    json GetCheatScript(const std::string& ctFilePath, int entryId);
+    json UpdateCheatScript(const std::string& ctFilePath, int entryId, const std::string& newScript);
 
     // --- FUNCIONES DE UTILIDAD ---
     size_t GetDriverCount() const;

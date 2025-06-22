@@ -1,13 +1,21 @@
+//=====================================================================================
+//=====================================================================================
+//
+//   >>> FIN DEL ARCHIVO: backend/main.cpp <<<
+//   >>> INICIO DEL ARCHIVO: frontend/dashboard.html <<<
+//
+//=====================================================================================
+//=====================================================================================
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BYOVD Professional Suite v3.0</title>
+    <title>Belzebub - Professional Suite</title>
     <style>
         :root {
-            --bg-dark: #121212; --bg-light: #1e1e1e; --primary: #00aaff;
-            --secondary: #00e5ff; --success: #4caf50; --error: #f44336; --text: #e0e0e0;
+            --bg-dark: #121212; --bg-light: #1e1e1e; --primary: #c70039;
+            --secondary: #ff5733; --success: #4caf50; --error: #f44336; --text: #e0e0e0;
         }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-dark);
@@ -16,52 +24,74 @@
         .card { background-color: var(--bg-light); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--primary); }
         .card-header h2 { margin: 0; color: var(--primary); font-size: 1.2rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; }
-        input[type="text"], input[type="number"], input[type="file"], select {
+        input[type="text"], input[type="number"], select {
             width: 100%; padding: 10px; border: 1px solid #444; border-radius: 6px;
             background-color: #2a2a2a; color: var(--text); box-sizing: border-box;
         }
-        input::file-selector-button { background-color: var(--primary); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; }
-        button {
-            padding: 10px 15px; border: none; border-radius: 6px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s;
-        }
+        button { padding: 10px 15px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-primary { background-color: var(--primary); color: white; }
         .btn-primary:hover { background-color: var(--secondary); }
         .btn-danger { background-color: var(--error); color: white; }
-        .log-area {
-            background-color: #0a0a0a; height: 250px; overflow-y: auto; padding: 10px;
-            border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.9rem;
-        }
-        .log-entry { margin-bottom: 5px; }
-        .log-info { color: var(--secondary); } .log-success { color: var(--success); } .log-error { color: var(--error); }
+        .log-area { background-color: #0a0a0a; height: 250px; overflow-y: auto; padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.9rem; }
+        .log-entry { margin-bottom: 5px; } .log-info { color: var(--secondary); } .log-success { color: var(--success); } .log-error { color: var(--error); }
         #driverList, #cheatEntries { list-style: none; padding: 0; max-height: 200px; overflow-y: auto; }
-        #driverList li, #cheatEntries li {
-            background-color: #2a2a2a; padding: 10px; margin-bottom: 5px; border-radius: 5px;
-            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-        }
+        #driverList li, #cheatEntries li { background-color: #2a2a2a; padding: 10px; margin-bottom: 5px; border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         #driverList li.selected { background-color: var(--primary); }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.7); }
+        .modal-content { background-color: var(--bg-light); margin: 10% auto; padding: 20px; border-radius: 12px; border: 1px solid var(--primary); width: 80%; max-width: 800px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; }
+        .close-button { color: var(--text); font-size: 28px; font-weight: bold; cursor: pointer; }
+        #processTable { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        #processTable th, #processTable td { padding: 8px; text-align: left; border-bottom: 1px solid #444; }
+        #processTable th { cursor: pointer; }
+        #processTable tbody tr:hover { background-color: #2a2a2a; cursor: pointer; }
+        #scriptEditor { width: 100%; height: 300px; background-color: #0a0a0a; color: var(--text); font-family: 'Courier New', monospace; padding: 10px; border-radius: 6px; border: 1px solid #444; }
     </style>
 </head>
 <body>
-
-    <header class="card">
-        <div class="card-header">
-            <h2>馃殌 BYOVD Professional Suite v3.0</h2>
+    <!-- Modals (ventanas emergentes) -->
+    <div id="processModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Lista de Procesos</h2>
+                <span class="close-button" onclick="closeModal('processModal')">&times;</span>
+            </div>
+            <input type="text" id="processSearch" placeholder="Filtrar por nombre..." onkeyup="filterProcessList()" style="margin-bottom: 10px;">
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table id="processTable">
+                    <thead><tr><th>Nombre</th><th>PID</th><th>CPU %</th></tr></thead>
+                    <tbody><!-- Se llena con JS --></tbody>
+                </table>
+            </div>
         </div>
+    </div>
+
+    <div id="scriptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="scriptEditorTitle">Editor de Script</h2>
+                <span class="close-button" onclick="closeModal('scriptModal')">&times;</span>
+            </div>
+            <textarea id="scriptEditor"></textarea>
+            <button id="saveScriptBtn" class="btn-primary" style="margin-top: 10px;">Guardar Script</button>
+        </div>
+    </div>
+    
+    <!-- Contenido principal -->
+    <header class="card">
+        <div class="card-header"><h2>?? Belzebub - Professional Suite ??</h2></div>
         <div id="statusBar" style="display: flex; gap: 20px;">
             <div><strong>Estado del Driver:</strong> <span id="driverStatus">No Cargado</span></div>
-            <div><strong>Driver Actual:</strong> <span id="currentDriverName">Ninguno</span></div>
+            <div><strong>Proceso Objetivo:</strong> <span id="processStatus">Ninguno</span></div>
         </div>
     </header>
 
     <div class="grid">
-        <!-- Columna 1: Control de Drivers y Procesos -->
         <div class="card">
-            <div class="card-header"><h2>1. Gesti贸n de Drivers y Procesos</h2></div>
-            
+            <div class="card-header"><h2>1. Gestión de Drivers y Procesos</h2></div>
             <div class="form-group">
                 <label>Drivers Disponibles</label>
                 <ul id="driverList"><li class="log-info">Cargando...</li></ul>
@@ -70,45 +100,33 @@
                     <button id="unloadDriverBtn" class="btn-danger">Descargar Actual</button>
                 </div>
             </div>
-            
             <div class="form-group">
-                <label for="processName">Buscar Proceso</label>
-                <input type="text" id="processName" placeholder="notepad.exe">
-                <button id="findProcessBtn" style="margin-top: 5px;">Buscar</button>
-            </div>
-
-             <div class="form-group">
-                <label for="processSelect">Proceso Objetivo (PID)</label>
-                <select id="processSelect"></select>
+                <label>Proceso Objetivo</label>
+                <button id="openProcessListBtn" class="btn-primary">Seleccionar Proceso...</button>
             </div>
         </div>
 
-        <!-- Columna 2: Inyecci贸n y Control de Cheats -->
         <div class="card">
-            <div class="card-header"><h2>2. Inyecci贸n y Control</h2></div>
-            
+            <div class="card-header"><h2>2. Inyección y Control</h2></div>
             <div class="form-group">
-                <label for="dllPath">Inyecci贸n de DLL</label>
+                <label for="dllPath">Inyección de DLL</label>
                 <input type="text" id="dllPath" placeholder="C:\ruta\a\mi.dll">
                 <button id="injectDllBtn" style="margin-top: 5px;">Inyectar DLL</button>
             </div>
-
             <div class="form-group">
                 <label for="ctPath">Cargar Cheat Table (.CT)</label>
-                 <input type="text" id="ctPath" placeholder="C:\ruta\a\tabla.ct">
+                <input type="text" id="ctPath" placeholder="C:\ruta\a\tabla.ct">
                 <button id="loadCtBtn" style="margin-top: 5px;">Cargar e Inspeccionar</button>
             </div>
-
-             <div class="form-group">
+            <div class="form-group">
                 <label>Entradas de la Tabla</label>
                 <ul id="cheatEntries"><li>Carga una tabla para ver las entradas.</li></ul>
             </div>
         </div>
         
-        <!-- Columna 3: Speedhack y Logs -->
         <div class="card">
-             <div class="card-header"><h2>3. Herramientas y Logs</h2></div>
-             <div class="form-group">
+            <div class="card-header"><h2>3. Herramientas y Logs</h2></div>
+            <div class="form-group">
                 <label for="speedhackSlider">Speedhack: <span id="speedValue">1.0</span>x</label>
                 <input type="range" id="speedhackSlider" min="0.1" max="5" step="0.1" value="1.0" style="width: 100%;">
             </div>
@@ -120,14 +138,11 @@
     </div>
 
     <script>
+        // --- API Helper ---
         const API = {
             async post(endpoint, body) {
                 try {
-                    const response = await fetch(`/api/${endpoint}`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(body)
-                    });
+                    const response = await fetch(`/api/${endpoint}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     return await response.json();
                 } catch (error) {
@@ -147,11 +162,14 @@
             }
         };
 
+        // --- Estado Global de la Aplicación ---
         let state = {
             selectedDriverId: null,
             targetPID: null,
+            targetProcessName: '',
             ctPath: '',
-            cheatEntries: [],
+            currentEditingEntryId: null,
+            allProcesses: []
         };
         
         // --- Logging ---
@@ -164,16 +182,32 @@
             logArea.scrollTop = logArea.scrollHeight;
         }
 
-        // --- Actualizaciones de UI ---
+        // --- Manejo de Modals ---
+        function openModal(modalId) { document.getElementById(modalId).style.display = "block"; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = "none"; }
+
+        // --- Renderizado de UI ---
         function updateDriverStatus(status) {
             document.getElementById('driverStatus').textContent = status.driverLoaded ? 'Cargado' : 'No Cargado';
-            document.getElementById('currentDriverName').textContent = status.currentDriverName;
             document.getElementById('driverStatus').style.color = status.driverLoaded ? 'var(--success)' : 'var(--error)';
         }
-
+        function updateProcessStatus() {
+            const el = document.getElementById('processStatus');
+            if (state.targetPID) {
+                el.textContent = `${state.targetProcessName} (PID: ${state.targetPID})`;
+                el.style.color = 'var(--success)';
+            } else {
+                el.textContent = 'Ninguno';
+                el.style.color = 'var(--error)';
+            }
+        }
         function renderDriverList(drivers) {
             const list = document.getElementById('driverList');
             list.innerHTML = '';
+            if (!drivers) {
+                list.innerHTML = '<li class="log-error">Error al cargar drivers.</li>';
+                return;
+            }
             drivers.forEach(driver => {
                 const li = document.createElement('li');
                 li.dataset.driverId = driver.id;
@@ -187,29 +221,25 @@
                 list.appendChild(li);
             });
         }
-
         function renderProcessList(processes) {
-            const select = document.getElementById('processSelect');
-            select.innerHTML = '';
-            if (processes.length > 0) {
-                processes.forEach(p => {
-                    const option = document.createElement('option');
-                    option.value = p.pid;
-                    option.textContent = `${p.name} (PID: ${p.pid})`;
-                    select.appendChild(option);
-                });
-                state.targetPID = select.value;
-                log(`${processes.length} procesos encontrados. '${processes[0].name}' seleccionado por defecto.`);
-            } else {
-                log('No se encontraron procesos con ese nombre.', 'error');
-            }
+            const tableBody = document.querySelector("#processTable tbody");
+            tableBody.innerHTML = '';
+            processes.forEach(p => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `<td>${p.name}</td><td>${p.pid}</td><td>${p.cpuUsage.toFixed(2)}%</td>`;
+                row.onclick = () => {
+                    state.targetPID = p.pid;
+                    state.targetProcessName = p.name;
+                    updateProcessStatus();
+                    closeModal('processModal');
+                    log(`Proceso seleccionado: ${p.name} (PID: ${p.pid})`, 'success');
+                };
+            });
         }
-        
         function renderCheatEntries(entries) {
-            state.cheatEntries = entries;
             const list = document.getElementById('cheatEntries');
             list.innerHTML = '';
-            if(entries.length === 0){
+            if(!entries || entries.length === 0){
                 list.innerHTML = '<li>No se encontraron entradas en la tabla.</li>';
                 return;
             }
@@ -217,65 +247,56 @@
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <span>${entry.description}</span>
-                    <div style="display:flex; gap: 5px;">
-                        <input type="text" placeholder="Nuevo valor" class="cheat-value-input" data-entry-id="${entry.id}" style="width: 80px; padding: 5px;">
+                    <div style="display:flex; gap: 10px; align-items: center;">
+                        <input type="text" placeholder="Valor" class="cheat-value-input" data-entry-id="${entry.id}" style="width: 80px; padding: 5px;">
                         <input type="checkbox" class="cheat-activate-toggle" data-entry-id="${entry.id}" title="Activar/Desactivar">
+                        <button class="edit-script-btn" data-entry-id="${entry.id}" style="padding: 2px 6px;">Editar</button>
                     </div>`;
                 list.appendChild(li);
             });
         }
 
-        // --- L贸gica de Negocio y Eventos ---
+        // --- Lógica de Eventos ---
         async function initialize() {
-            log('Inicializando Suite Profesional BYOVD v3.0...');
+            log('Inicializando Belzebub - Professional Suite...');
             const status = await API.get('status');
             if(status) updateDriverStatus(status);
-
             const drivers = await API.get('drivers');
-            if(drivers) renderDriverList(drivers);
-            
+            renderDriverList(drivers);
+            updateProcessStatus();
             setupEventListeners();
         }
 
+        function filterProcessList() {
+            const filter = document.getElementById('processSearch').value.toLowerCase();
+            const filteredProcesses = state.allProcesses.filter(p => p.name.toLowerCase().includes(filter));
+            renderProcessList(filteredProcesses);
+        }
+        
         function setupEventListeners() {
-            // Drivers
             document.getElementById('loadDriverBtn').onclick = async () => {
-                if (state.selectedDriverId === null) return log('Por favor, selecciona un driver primero.', 'error');
+                 if (state.selectedDriverId === null) return log('Por favor, selecciona un driver primero.', 'error');
                 log(`Cargando driver ID: ${state.selectedDriverId}...`);
                 const res = await API.post('load_driver', { id: state.selectedDriverId });
                 log(res.message, res.success ? 'success' : 'error');
                 if(res.success) updateDriverStatus(await API.get('status'));
             };
-
             document.getElementById('unloadDriverBtn').onclick = async () => {
                 log('Descargando driver actual...');
                 const res = await API.post('unload_driver', {});
                 log(res.message, res.success ? 'success' : 'error');
                 if(res.success) updateDriverStatus(await API.get('status'));
             };
-
-            // Procesos
-            document.getElementById('findProcessBtn').onclick = async () => {
-                const processName = document.getElementById('processName').value;
-                if (!processName) return log('Ingresa un nombre de proceso.', 'error');
-                log(`Buscando procesos que coincidan con '${processName}'...`);
-                const res = await API.post('find_process', { processName });
-                if (res.success) renderProcessList(res.processes);
-            };
-            document.getElementById('processSelect').onchange = (e) => state.targetPID = e.target.value;
-
-            // Inyecci贸n y CT
             document.getElementById('injectDllBtn').onclick = async () => {
-                if (!state.targetPID) return log('Selecciona un proceso objetivo primero.', 'error');
+                 if (!state.targetPID) return log('Selecciona un proceso objetivo primero.', 'error');
                 const dllPath = document.getElementById('dllPath').value;
                 if (!dllPath) return log('Ingresa la ruta de la DLL.', 'error');
                 log(`Inyectando '${dllPath}' en PID ${state.targetPID}...`);
                 const res = await API.post('inject_dll', { pid: parseInt(state.targetPID), dllPath });
                 log(res.message, res.success ? 'success' : 'error');
             };
-
             document.getElementById('loadCtBtn').onclick = async () => {
-                if (!state.targetPID) return log('Selecciona un proceso objetivo primero.', 'error');
+                 if (!state.targetPID) return log('Selecciona un proceso objetivo primero.', 'error');
                 state.ctPath = document.getElementById('ctPath').value;
                 if (!state.ctPath) return log('Ingresa la ruta del archivo .CT.', 'error');
                 
@@ -289,10 +310,46 @@
                     if(entriesRes.success) renderCheatEntries(entriesRes.entries);
                 }
             };
+             document.getElementById('speedhackSlider').onchange = async (e) => {
+                if (!state.targetPID) {
+                    log('Selecciona un proceso objetivo para usar speedhack.', 'error');
+                    e.target.value = 1.0;
+                    document.getElementById('speedValue').textContent = "1.0";
+                    return;
+                }
+                const speed = parseFloat(e.target.value);
+                log(`Estableciendo velocidad de speedhack a ${speed}x...`);
+                await API.post('set_speedhack', { pid: parseInt(state.targetPID), speed });
+            };
+
+            // Abrir lista de procesos
+            document.getElementById('openProcessListBtn').onclick = async () => {
+                log('Obteniendo lista de procesos...');
+                openModal('processModal');
+                const res = await API.get('processes');
+                if (res && res.success) {
+                    state.allProcesses = res.processes;
+                    renderProcessList(res.processes);
+                    log(`Encontrados ${res.processes.length} procesos.`);
+                }
+            };
             
-            // Eventos delegados para las entradas de la tabla
-            document.getElementById('cheatEntries').addEventListener('change', async (e) => {
-                if (e.target.classList.contains('cheat-activate-toggle')) {
+            // Eventos delegados para la lista de cheats
+            document.getElementById('cheatEntries').addEventListener('click', async (e) => {
+                if (e.target.classList.contains('edit-script-btn')) {
+                    state.currentEditingEntryId = e.target.dataset.entryId;
+                    log(`Editando script para la entrada ID: ${state.currentEditingEntryId}`);
+                    const res = await API.post('get_script', { ctPath: state.ctPath, entryId: parseInt(state.currentEditingEntryId) });
+                    if(res && res.success) {
+                        document.getElementById('scriptEditor').value = res.script.trim();
+                        openModal('scriptModal');
+                    } else {
+                        log(res.message || "No se pudo obtener el script.", 'error');
+                    }
+                }
+            });
+             document.getElementById('cheatEntries').addEventListener('change', async (e) => {
+                 if (e.target.classList.contains('cheat-activate-toggle')) {
                     const entryId = e.target.dataset.entryId;
                     const activate = e.target.checked;
                     log(`${activate ? 'Activando' : 'Desactivando'} entrada ID ${entryId}...`);
@@ -308,24 +365,24 @@
                 }
             });
 
-            // Speedhack
-            document.getElementById('speedhackSlider').oninput = (e) => {
-                 document.getElementById('speedValue').textContent = parseFloat(e.target.value).toFixed(1);
-            };
-            document.getElementById('speedhackSlider').onchange = async (e) => {
-                if (!state.targetPID) {
-                    log('Selecciona un proceso objetivo para usar speedhack.', 'error');
-                    e.target.value = 1.0;
-                    document.getElementById('speedValue').textContent = "1.0";
-                    return;
+            // Guardar script editado
+            document.getElementById('saveScriptBtn').onclick = async () => {
+                const newScript = document.getElementById('scriptEditor').value;
+                log(`Guardando script para la entrada ID: ${state.currentEditingEntryId}`);
+                const res = await API.post('update_script', {
+                    ctPath: state.ctPath,
+                    entryId: parseInt(state.currentEditingEntryId),
+                    script: newScript
+                });
+                log(res.message, res.success ? 'success' : 'error');
+                if (res.success) {
+                    closeModal('scriptModal');
                 }
-                const speed = parseFloat(e.target.value);
-                log(`Estableciendo velocidad de speedhack a ${speed}x...`);
-                await API.post('set_speedhack', { pid: parseInt(state.targetPID), speed });
             };
         }
 
+        // --- Inicializar la aplicación ---
         window.onload = initialize;
     </script>
 </body>
-</html> 
+</html>

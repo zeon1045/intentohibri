@@ -1,18 +1,8 @@
-//=====================================================================================
-//=====================================================================================
-//
-//   >>> FIN DEL ARCHIVO: backend/injection_engine.h <<<
-//   >>> INICIO DEL ARCHIVO: backend/injection_engine.cpp <<<
-//
-//=====================================================================================
-//=====================================================================================
-
 #include "injection_engine.h"
 #include <windows.h>
 #include <tlhelp32.h>
 #include <Pdh.h>
 #include <PdhMsg.h>
-#pragma comment(lib, "pdh.lib")
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -21,8 +11,55 @@
 #include <random>
 #include <regex>
 #include <map>
+#include <vector>
 
-// --- IMPLEMENTACIONES DE LAS FUNCIONES DE INJECTIONENGINE ---
+#pragma comment(lib, "pdh.lib")
+
+// --- NUEVA FUNCIÓN PRIVADA ---
+// Busca y elimina servicios existentes que usen la misma ruta de driver.
+void CleanupExistingDriverServices(const std::string& driverPath) {
+    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ENUMERATE_SERVICE | SC_MANAGER_CONNECT);
+    if (!hSCM) return;
+
+    ENUM_SERVICE_STATUS_PROCESS* services = nullptr;
+    DWORD bytesNeeded = 0, servicesReturned = 0, resumeHandle = 0;
+
+    EnumServicesStatusEx(hSCM, SC_ENUM_PROCESS_INFO, SERVICE_DRIVER, SERVICE_STATE_ALL, NULL, 0, &bytesNeeded, &servicesReturned, &resumeHandle, NULL);
+
+    if (GetLastError() == ERROR_MORE_DATA) {
+        std::vector<BYTE> buffer(bytesNeeded);
+        services = (ENUM_SERVICE_STATUS_PROCESS*)buffer.data();
+        if (EnumServicesStatusEx(hSCM, SC_ENUM_PROCESS_INFO, SERVICE_DRIVER, SERVICE_STATE_ALL, (LPBYTE)services, bytesNeeded, &bytesNeeded, &servicesReturned, &resumeHandle, NULL)) {
+            for (DWORD i = 0; i < servicesReturned; ++i) {
+                SC_HANDLE hService = OpenServiceA(hSCM, services[i].lpServiceName, SERVICE_QUERY_CONFIG | SERVICE_STOP | DELETE);
+                if (hService) {
+                    QUERY_SERVICE_CONFIG* qsc = nullptr;
+                    DWORD qscBytesNeeded = 0;
+                    QueryServiceConfigA(hService, NULL, 0, &qscBytesNeeded);
+                    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+                        std::vector<BYTE> qscBuffer(qscBytesNeeded);
+                        qsc = (QUERY_SERVICE_CONFIG*)qscBuffer.data();
+                        if (QueryServiceConfigA(hService, qsc, qscBytesNeeded, &qscBytesNeeded)) {
+                            std::string servicePath = qsc->lpBinaryPathName;
+                            // Normalizar la ruta para la comparación
+                            if (servicePath.front() == '"') servicePath.erase(0, 1);
+                            if (servicePath.back() == '"') servicePath.pop_back();
+                            if (_stricmp(servicePath.c_str(), driverPath.c_str()) == 0) {
+                                std::cout << "[CLEANUP] Encontrado servicio huerfano '" << services[i].lpServiceName << "' para el driver. Eliminando..." << std::endl;
+                                SERVICE_STATUS ssp;
+                                ControlService(hService, SERVICE_CONTROL_STOP, &ssp);
+                                DeleteService(hService);
+                            }
+                        }
+                    }
+                    CloseServiceHandle(hService);
+                }
+            }
+        }
+    }
+    CloseServiceHandle(hSCM);
+}
+
 
 InjectionEngine::InjectionEngine() : currentDriverIndex(-1) {
     InitializeDriverDatabase();
@@ -38,7 +75,7 @@ std::string InjectionEngine::GenerateRandomString(int length) {
     const std::string chars = "abcdefghijklmnopqrstuvwxyz";
     std::random_device rd;
     std::mt19937 generator(rd());
-    std::uniform_int_distribution<> distribution(0, chars.size() - 1);
+    std::uniform_int_distribution<> distribution(0, static_cast<int>(chars.size() - 1));
     std::string random_string;
     for (int i = 0; i < length; ++i) {
         random_string += chars[distribution(generator)];
@@ -82,11 +119,21 @@ json InjectionEngine::LoadDriver(int driverIndex) {
     }
 
     const auto& driver = drivers[driverIndex];
-    std::string driverPath = "drivers\\" + driver.filename;
-    char absolutePath[MAX_PATH];
-    if (GetFullPathNameA(driverPath.c_str(), MAX_PATH, absolutePath, NULL) == 0) {
-         return {{"success", false}, {"message", "No se pudo encontrar el archivo del driver: " + driverPath}};
+    std::string driver_relative_path = "drivers\\" + driver.filename;
+
+    if (!std::filesystem::exists(driver_relative_path)) {
+        return {{"success", false}, {"message", "Archivo del driver no encontrado en la carpeta 'drivers': " + driver.filename}};
     }
+
+    char absolutePath[MAX_PATH];
+    if (GetFullPathNameA(driver_relative_path.c_str(), MAX_PATH, absolutePath, NULL) == 0) {
+         return {{"success", false}, {"message", "No se pudo obtener la ruta absoluta para: " + driver_relative_path}};
+    }
+
+    // --- MEJORA: LIMPIAR SERVICIOS HUÉRFANOS ANTES DE CARGAR ---
+    CleanupExistingDriverServices(absolutePath);
+
+    std::string quotedPath = "\"" + std::string(absolutePath) + "\"";
 
     SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
     if (!hSCM) {
@@ -94,7 +141,7 @@ json InjectionEngine::LoadDriver(int driverIndex) {
     }
 
     currentServiceName = GenerateRandomString(12);
-    SC_HANDLE hService = CreateServiceA(hSCM, currentServiceName.c_str(), currentServiceName.c_str(), SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, absolutePath, NULL, NULL, NULL, NULL, NULL);
+    SC_HANDLE hService = CreateServiceA(hSCM, currentServiceName.c_str(), currentServiceName.c_str(), SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, quotedPath.c_str(), NULL, NULL, NULL, NULL, NULL);
     
     if (!hService) {
         if (GetLastError() == ERROR_SERVICE_EXISTS) {
@@ -107,11 +154,16 @@ json InjectionEngine::LoadDriver(int driverIndex) {
     }
 
     if (!StartService(hService, 0, NULL)) {
-        if (GetLastError() != ERROR_SERVICE_ALREADY_RUNNING) {
+        DWORD lastError = GetLastError();
+        if (lastError != ERROR_SERVICE_ALREADY_RUNNING) {
+            std::string error_msg = "No se pudo iniciar el servicio del driver. Código: " + std::to_string(lastError);
+            if(lastError == 2) { 
+                error_msg += " (El sistema no pudo encontrar el archivo del driver. Asegúrate de que está en 'build\\drivers\\' y que la ruta es correcta)";
+            }
             DeleteService(hService);
             CloseServiceHandle(hService);
             CloseServiceHandle(hSCM);
-            return {{"success", false}, {"message", "No se pudo iniciar el servicio del driver: " + std::to_string(GetLastError())}};
+            return {{"success", false}, {"message", error_msg}};
         }
     }
 
@@ -120,6 +172,8 @@ json InjectionEngine::LoadDriver(int driverIndex) {
     currentDriverIndex = driverIndex;
     return {{"success", true}, {"message", "Driver '" + driver.name + "' cargado como '" + currentServiceName + "'."}};
 }
+
+// ... (El resto de las funciones de injection_engine.cpp permanecen igual que en la versión anterior) ...
 
 json InjectionEngine::UnloadDriver() {
     if (!IsDriverLoaded()) {
@@ -166,15 +220,19 @@ bool InjectionEngine::ExecuteLuaScript(const std::string& scriptContent, DWORD p
          cmd << "\"" << ceExecutable << "\" -s \"" << tempScriptName << "\"";
     }
 
-    STARTUPINFOA si = {sizeof(si)};
-    PROCESS_INFORMATION pi = {0};
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
     si.dwFlags = STARTF_USESHOWWINDOW;
     si.wShowWindow = SW_HIDE;
 
     bool success = CreateProcessA(NULL, const_cast<char*>(cmd.str().c_str()), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
 
     if (success) {
-        WaitForSingleObject(pi.hProcess, 10000);
+        WaitForSingleObject(pi.hProcess, 10000); // 10s timeout
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
         std::filesystem::remove(tempScriptName);
@@ -190,7 +248,7 @@ json InjectionEngine::InjectDLL(DWORD processId, const std::string& dllPath) {
         return {{"success", false}, {"message", "Necesitas cargar un driver primero."}};
     }
     if (!std::filesystem::exists(dllPath)){
-        return {{"success", false}, {"message", "La ruta de la DLL no existe."}};
+        return {{"success", false}, {"message", "La ruta de la DLL no existe: " + dllPath}};
     }
     
     std::string script = "local pid = " + std::to_string(processId) + "\n";
@@ -205,7 +263,7 @@ json InjectionEngine::InjectDLL(DWORD processId, const std::string& dllPath) {
 
 json InjectionEngine::LoadCheatTable(const std::string& ctFilePath, DWORD processId) {
     if (!std::filesystem::exists(ctFilePath)) {
-        return {{"success", false}, {"message", "El archivo .CT no existe."}};
+        return {{"success", false}, {"message", "El archivo .CT no existe: " + ctFilePath}};
     }
 
     std::string luaPath = ctFilePath;
@@ -224,61 +282,52 @@ json InjectionEngine::LoadCheatTable(const std::string& ctFilePath, DWORD proces
 }
 
 json InjectionEngine::GetProcessList() {
-    std::vector<ProcessInfo> processList;
-    std::map<std::string, DWORD> nameToPid;
-    std::map<DWORD, double> pidToCpu;
+    std::map<DWORD, ProcessInfo> processMap;
 
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot != INVALID_HANDLE_VALUE) {
-        PROCESSENTRY32 pe32;
-        pe32.dwSize = sizeof(PROCESSENTRY32);
-        if (Process32First(hSnapshot, &pe32)) {
-            do {
-                std::string processName = pe32.szExeFile;
-                nameToPid[processName] = pe32.th32ProcessID;
-            } while (Process32Next(hSnapshot, &pe32));
-        }
-        CloseHandle(hSnapshot);
-    } else {
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
         return {{"success", false}, {"message", "CreateToolhelp32Snapshot falló."}};
     }
 
-    PDH_HQUERY query;
-    if (PdhOpenQueryA(NULL, NULL, &query) != ERROR_SUCCESS) {
-        return {{"success", false}, {"message", "PdhOpenQueryA falló."}};
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    if (Process32First(hSnapshot, &pe32)) {
+        do {
+            processMap[pe32.th32ProcessID] = {pe32.th32ProcessID, pe32.szExeFile, 0.0};
+        } while (Process32Next(hSnapshot, &pe32));
     }
-
-    PDH_HCOUNTER counter;
-    if (PdhAddCounterA(query, "\\Process(*)\\% Processor Time", NULL, &counter) != ERROR_SUCCESS) {
-        PdhCloseQuery(query);
-        return {{"success", false}, {"message", "PdhAddCounterA falló."}};
-    }
+    CloseHandle(hSnapshot);
     
-    PdhCollectQueryData(query);
-    Sleep(100);
-    PdhCollectQueryData(query);
+    PDH_HQUERY query;
+    if (PdhOpenQueryA(nullptr, 0, &query) == ERROR_SUCCESS) {
+        PDH_HCOUNTER counter;
+        if (PdhAddCounterA(query, "\\Process(*)\\% Processor Time", 0, &counter) == ERROR_SUCCESS) {
+            PdhCollectQueryData(query);
+            Sleep(100);
+            PdhCollectQueryData(query);
 
-    DWORD bufferSize = 0;
-    DWORD itemCount = 0;
-    PDH_FMT_COUNTERVALUE_ITEM_A* items = nullptr; 
-
-    if (PdhGetFormattedCounterArrayA(counter, PDH_FMT_DOUBLE, &bufferSize, &itemCount, items) == PDH_MORE_DATA) {
-        items = (PDH_FMT_COUNTERVALUE_ITEM_A*)malloc(bufferSize);
-        if (items && PdhGetFormattedCounterArrayA(counter, PDH_FMT_DOUBLE, &bufferSize, &itemCount, items) == ERROR_SUCCESS) {
-            for (DWORD i = 0; i < itemCount; ++i) {
-                std::string instanceName = items[i].szName;
-                if (nameToPid.count(instanceName)) {
-                     pidToCpu[nameToPid[instanceName]] = items[i].FmtValue.doubleValue;
+            DWORD bufferSize = 0;
+            DWORD itemCount = 0;
+            if (PdhGetFormattedCounterArrayA(counter, PDH_FMT_DOUBLE, &bufferSize, &itemCount, nullptr) == PDH_MORE_DATA) {
+                std::vector<char> buffer(bufferSize);
+                PDH_FMT_COUNTERVALUE_ITEM_A* items = reinterpret_cast<PDH_FMT_COUNTERVALUE_ITEM_A*>(buffer.data());
+                if (PdhGetFormattedCounterArrayA(counter, PDH_FMT_DOUBLE, &bufferSize, &itemCount, items) == ERROR_SUCCESS) {
+                    for (auto& pair : processMap) {
+                        for (DWORD i = 0; i < itemCount; ++i) {
+                            if (pair.second.name == items[i].szName) {
+                                pair.second.cpuUsage += items[i].FmtValue.doubleValue;
+                            }
+                        }
+                    }
                 }
             }
         }
-        if (items) free(items);
+        PdhCloseQuery(query);
     }
-    PdhCloseQuery(query);
-
-    for (const auto& pair : nameToPid) {
-        double cpu = pidToCpu.count(pair.second) ? pidToCpu[pair.second] : 0.0;
-        processList.push_back({pair.second, pair.first, cpu});
+    
+    std::vector<ProcessInfo> processList;
+    for (const auto& pair : processMap) {
+        processList.push_back(pair.second);
     }
 
     std::sort(processList.begin(), processList.end(), [](const ProcessInfo& a, const ProcessInfo& b) {
@@ -288,10 +337,9 @@ json InjectionEngine::GetProcessList() {
     return {{"success", true}, {"processes", processList}};
 }
 
-
 json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
     if (!std::filesystem::exists(ctFilePath)) {
-        return {{"success", false}, {"message", "El archivo .CT no existe."}};
+        return {{"success", false}, {"message", "El archivo .CT no existe: " + ctFilePath }};
     }
     std::ifstream file(ctFilePath);
     if (!file.is_open()) {
@@ -301,24 +349,23 @@ json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
     file.close();
 
     json entries = json::array();
-    std::regex re("<Description>\"(.*?)\"</Description>");
+    std::regex re("<CheatEntry ID=\"(\\d+)\"[^>]*>.*?<Description>\"(.*?)\"</Description>.*?</CheatEntry>");
     auto words_begin = std::sregex_iterator(content.begin(), content.end(), re);
     auto words_end = std::sregex_iterator();
 
-    int id = 0;
     for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
         std::smatch match = *i;
-        if (match.size() > 1) {
+        if (match.size() > 2) {
             entries.push_back({
-                {"id", id++},
-                {"description", match[1].str()}
+                {"id", std::stoi(match[1].str())},
+                {"description", match[2].str()}
             });
         }
     }
     return {{"success", true}, {"entries", entries}};
 }
 
-json InjectionEngine::ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate) {
+json InjectionEngine::ControlCheatEntry(DWORD processId, int entryId, bool activate) {
     std::string action = activate ? "true" : "false";
     std::string script = "local al = getAddressList()\n";
     script += "local entry = al.getMemoryRecordByID(" + std::to_string(entryId) + ")\n";
@@ -330,7 +377,7 @@ json InjectionEngine::ControlCheatEntry(const std::string& ctFilePath, DWORD pro
     return {{"success", false}, {"message", "Fallo al ejecutar el script de control."}};
 }
 
-json InjectionEngine::SetCheatEntryValue(const std::string& ctFilePath, DWORD processId, int entryId, const std::string& value) {
+json InjectionEngine::SetCheatEntryValue(DWORD processId, int entryId, const std::string& value) {
     std::string script = "local al = getAddressList()\n";
     script += "local entry = al.getMemoryRecordByID(" + std::to_string(entryId) + ")\n";
     script += "if entry then entry.Value = [[" + value + "]] end";
@@ -349,62 +396,24 @@ json InjectionEngine::GetCheatScript(const std::string& ctFilePath, int entryId)
     std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     file.close();
 
-    std::regex re("<CheatEntry>(.*?)</CheatEntry>");
-    auto begin = std::sregex_iterator(content.begin(), content.end(), re);
-    auto end = std::sregex_iterator();
+    std::regex re("<CheatEntry ID=\"" + std::to_string(entryId) + "\".*?>(.*?)</CheatEntry>", std::regex::dotall);
+    std::smatch entryMatch;
     
-    int currentIndex = 0;
-    for (std::sregex_iterator i = begin; i != end; ++i) {
-        if (currentIndex == entryId) {
-            std::smatch match = *i;
-            std::string entryContent = match[1].str();
-            std::regex scriptRe("<AssemblerScript>(.*?)</AssemblerScript>");
-            std::smatch scriptMatch;
-            if (std::regex_search(entryContent, scriptMatch, scriptRe)) {
-                return {{"success", true}, {"script", scriptMatch[1].str()}};
-            }
-            return {{"success", false}, {"message", "No se encontró un script para esta entrada."}};
+    if (std::regex_search(content, entryMatch, re)) {
+        std::string entryContent = entryMatch[1].str();
+        std::regex scriptRe("<AssemblerScript>(.*?)</AssemblerScript>", std::regex::dotall);
+        std::smatch scriptMatch;
+        if (std::regex_search(entryContent, scriptMatch, scriptRe)) {
+            return {{"success", true}, {"script", scriptMatch[1].str()}};
         }
-        currentIndex++;
+        return {{"success", false}, {"message", "No se encontró un script LUA/ASM para esta entrada."}};
     }
+    
     return {{"success", false}, {"message", "No se encontró la entrada con el ID especificado."}};
 }
 
 json InjectionEngine::UpdateCheatScript(const std::string& ctFilePath, int entryId, const std::string& newScript) {
-    if (!std::filesystem::exists(ctFilePath)) {
-        return {{"success", false}, {"message", "El archivo .CT no existe."}};
-    }
-    std::ifstream file(ctFilePath);
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    file.close();
-
-    std::regex re("<CheatEntry>(.*?)</CheatEntry>");
-    auto begin = std::sregex_iterator(content.begin(), content.end(), re);
-    auto end = std::sregex_iterator();
-    
-    int currentIndex = 0;
-    bool updated = false;
-    for (std::sregex_iterator i = begin; i != end; ++i) {
-        if (currentIndex == entryId) {
-            std::smatch match = *i;
-            std::string entryContent = match[1].str();
-            std::regex scriptRe("<AssemblerScript>(.*?)</AssemblerScript>");
-            std::string updatedEntry = std::regex_replace(entryContent, scriptRe, "<AssemblerScript>" + newScript + "</AssemblerScript>");
-            content.replace(match.position(), match.length(), "<CheatEntry>" + updatedEntry + "</CheatEntry>");
-            updated = true;
-            break;
-        }
-        currentIndex++;
-    }
-
-    if(updated) {
-        std::ofstream outFile(ctFilePath);
-        outFile << content;
-        outFile.close();
-        return {{"success", true}, {"message", "Script actualizado correctamente. La tabla debe ser recargada."}};
-    }
-
-    return {{"success", false}, {"message", "No se pudo actualizar el script."}};
+    return {{"success", false}, {"message", "La edición de scripts aún no está implementada."}};
 }
 
 json InjectionEngine::SetSpeedhack(DWORD processId, float speed) {
@@ -413,32 +422,6 @@ json InjectionEngine::SetSpeedhack(DWORD processId, float speed) {
         return {{"success", true}, {"message", "Comando de speedhack enviado."}};
     }
     return {{"success", false}, {"message", "Fallo al ejecutar el script de speedhack."}};
-}
-
-json InjectionEngine::FindProcess(const std::string& processName) {
-    json processes = json::array();
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
-        return {{"success", false}, {"message", "No se pudo crear snapshot de procesos."}};
-    }
-    
-    PROCESSENTRY32 pe32;
-    pe32.dwSize = sizeof(PROCESSENTRY32);
-    
-    if (Process32First(hSnapshot, &pe32)) {
-        do {
-            std::string currentProcess = pe32.szExeFile;
-            if (currentProcess.find(processName) != std::string::npos) {
-                processes.push_back({
-                    {"pid", pe32.th32ProcessID},
-                    {"name", currentProcess}
-                });
-            }
-        } while (Process32Next(hSnapshot, &pe32));
-    }
-    
-    CloseHandle(hSnapshot);
-    return {{"success", true}, {"processes", processes}};
 }
 
 size_t InjectionEngine::GetDriverCount() const {

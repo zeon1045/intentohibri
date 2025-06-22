@@ -1,0 +1,3 @@
+C:/Users/mosta/Desktop/belbel/build/CMakeFiles/Belzebub.dir
+C:/Users/mosta/Desktop/belbel/build/CMakeFiles/edit_cache.dir
+C:/Users/mosta/Desktop/belbel/build/CMakeFiles/rebuild_cache.dir

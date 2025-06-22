@@ -1,123 +1,89 @@
 @echo off
 cls
 echo ========================================================
-echo   Belzebub - Professional Suite - Compilador Visual Studio
+echo   Belzebub - Compilador Forzado con CMake + MinGW
 echo ========================================================
 echo.
 
-REM --- Paso 1: Encontrar y Configurar el Entorno de Visual Studio ---
-echo [INFO] Buscando la instalacion de Visual Studio...
+:: --- CONFIGURACIÓN ---
+:: Establece la ruta raíz de MSYS2. Ajústala si lo instalaste en otro lugar.
+set "MSYS2_ROOT=C:\msys64"
+set "MINGW_PATH=%MSYS2_ROOT%\mingw64\bin"
 
-set "VSWHERE_PATH=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-if not exist "%VSWHERE_PATH%" (
-    echo [ERROR] No se encontro 'vswhere.exe' en la ruta esperada.
-    echo          Asegurate de que el Instalador de Visual Studio este presente.
-    goto :error
-)
+:: Define explícitamente las rutas a los compiladores de C y CXX de MinGW
+set "C_COMPILER=%MINGW_PATH%\gcc.exe"
+set "CXX_COMPILER=%MINGW_PATH%\g++.exe"
 
-for /f "usebackq tokens=*" %%i in (`"%VSWHERE_PATH%" -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
-    set "VS_INSTALL_PATH=%%i"
-)
+:: --- EJECUCIÓN ---
 
-if not defined VS_INSTALL_PATH (
-    echo [ERROR] No se pudo encontrar una instalacion de Visual Studio con las herramientas de C++.
-    echo          Abre "Visual Studio Installer" y asegurate de que la carga de trabajo
-    echo          "Desarrollo de escritorio con C++" este instalada.
-    goto :error
-)
-
-set "VS_BAT_PATH=%VS_INSTALL_PATH%\VC\Auxiliary\Build\vcvars64.bat"
-if not exist "%VS_BAT_PATH%" (
-    echo [ERROR] No se encontro el archivo vcvars64.bat en la ruta esperada.
-    echo          Ruta buscada: %VS_BAT_PATH%
-    goto :error
-)
-
-echo [INFO] Configurando el entorno desde: "%VS_BAT_PATH%"
-call "%VS_BAT_PATH%" > nul
-if errorlevel 1 (
-    echo [ERROR] Fallo al ejecutar vcvars64.bat. El entorno no se pudo configurar.
-    goto :error
-)
-echo [SUCCESS] Entorno de Visual Studio configurado exitosamente.
+:: 1. Añadir MinGW-w64 al PATH para esta sesión
+echo [INFO] Configurando el PATH para incluir MinGW: %MINGW_PATH%
+set "PATH=%MINGW_PATH%;%PATH%"
 echo.
 
-REM --- Paso 2: Preparar Directorios y Entorno de Trabajo ---
-set "ROOT_DIR=%~dp0"
-set "BUILD_DIR=%ROOT_DIR%build"
-
-pushd "%ROOT_DIR%"
-
-if not exist "%BUILD_DIR%" (
-    mkdir "%BUILD_DIR%"
-    echo [INFO] Directorio 'build' creado.
+:: 2. Verificar que los compiladores y herramientas existan
+echo [INFO] Verificando herramientas de compilacion...
+where cmake >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [FATAL] El comando 'cmake' no se encuentra. Asegurate de que este instalado y en el PATH del sistema.
+    goto :fail
 )
-echo.
-echo [INFO] Compilando archivos fuente...
-
-REM --- Paso 3: Compilacion de Archivos Objeto ---
-cl /std:c++17 /O2 /W3 /EHsc /MD /I"." /c "backend\main.cpp" /Fo:"%BUILD_DIR%\main.obj"
-if errorlevel 1 (
-    echo [ERROR] No se pudo compilar main.cpp
-    goto :error
+where mingw32-make >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [FATAL] El comando 'mingw32-make' no se encuentra. Revisa tu instalacion de MinGW-w64.
+    goto :fail
 )
-cl /std:c++17 /O2 /W3 /EHsc /MD /I"." /c "backend\injection_engine.cpp" /Fo:"%BUILD_DIR%\injection_engine.obj"
-if errorlevel 1 (
-    echo [ERROR] No se pudo compilar injection_engine.cpp
-    goto :error
+if not exist "%CXX_COMPILER%" (
+    echo [FATAL] No se encuentra el compilador de C++ g++.exe en: %CXX_COMPILER%
+    goto :fail
 )
-echo [SUCCESS] Fuentes compiladas a archivos objeto.
+echo [SUCCESS] Herramientas de compilacion encontradas.
 echo.
 
-REM --- Paso 4: Enlazado del Ejecutable (Metodo Robusto con Rutas Explícitas) ---
-echo [INFO] Enlazando para crear el ejecutable...
-
-REM Construir la ruta a las librerías de MSVC manualmente
-set "MSVC_LIB_PATH=%VS_INSTALL_PATH%\VC\Tools\MSVC"
-for /d %%d in ("%MSVC_LIB_PATH%\*") do set "MSVC_LIB_PATH=%%d\lib\x64"
-
-link /OUT:"%BUILD_DIR%\Belzebub.exe" ^
-     "%BUILD_DIR%\main.obj" "%BUILD_DIR%\injection_engine.obj" ^
-     /SUBSYSTEM:CONSOLE ^
-     /LIBPATH:"%MSVC_LIB_PATH%" ^
-     /LIBPATH:"%UniversalCRTSdkDir%Lib\%UCRTVersion%\ucrt\x64" ^
-     /LIBPATH:"%UniversalCRTSdkDir%Lib\%UCRTVersion%\um\x64" ^
-     shell32.lib user32.lib kernel32.lib ws2_32.lib advapi32.lib msvcprt.lib pdh.lib
-     
-if errorlevel 1 (
-    echo [ERROR] El enlazado ha fallado.
-    goto :error
+:: 3. Preparar el directorio de build (empezando desde cero)
+set "SCRIPT_DIR=%~dp0"
+echo [INFO] Preparando directorio de compilacion 'build' (limpiando)...
+if exist "%SCRIPT_DIR%build" (
+    rmdir /s /q "%SCRIPT_DIR%build"
 )
-echo [SUCCESS] Ejecutable 'Belzebub.exe' creado en la carpeta 'build'.
+mkdir "%SCRIPT_DIR%build"
+cd /d "%SCRIPT_DIR%build"
 echo.
 
-REM --- Paso 5: Copia de Recursos Esenciales ---
-echo [INFO] Copiando recursos necesarios a la carpeta 'build'...
-if exist "core_dlls" (
-    xcopy /s /y /q "core_dlls" "%BUILD_DIR%\core_dlls\" > nul
+:: 4. Ejecutar CMake para generar los Makefiles de MinGW, forzando los compiladores
+echo [INFO] Ejecutando CMake para generar los archivos de proyecto...
+cmake .. -G "MinGW Makefiles" ^
+    -D CMAKE_C_COMPILER="%C_COMPILER%" ^
+    -D CMAKE_CXX_COMPILER="%CXX_COMPILER%"
+    
+if %errorlevel% neq 0 (
+    echo [ERROR] CMake falló al generar los Makefiles.
+    goto :fail
 )
-if exist "drivers" (
-    xcopy /s /y /q "drivers" "%BUILD_DIR%\drivers\" > nul
-)
-if exist "frontend" (
-    xcopy /s /y /q "frontend" "%BUILD_DIR%\frontend\" > nul
-)
-echo [SUCCESS] Recursos copiados.
-
-REM --- Finalizacion ---
+echo [SUCCESS] Makefiles generados correctamente.
 echo.
-echo ========================================================
-echo      COMPILACION COMPLETADA CON EXITO
-echo ========================================================
-echo.
-echo Tu aplicacion esta lista en la carpeta 'build'.
-echo Ejecuta 'Belzebub.exe' como Administrador para iniciar.
-goto :end
 
-:error
+:: 5. Compilar el proyecto con mingw32-make
+echo [INFO] Compilando el proyecto...
+mingw32-make
+if %errorlevel% neq 0 (
+    echo [ERROR] La compilación con mingw32-make ha fallado.
+    goto :fail
+)
+
+echo.
+echo =================================================
+echo   COMPILACION COMPLETADA CON EXITO
+echo =================================================
+echo.
+echo   El ejecutable 'Belzebub.exe' y sus recursos
+echo   se encuentran en la carpeta 'build'.
+echo.
+goto :eof
+
+:fail
 echo.
 echo [FATAL] La compilacion ha fallado. Revisa los mensajes de error.
-
-:end
 echo.
 pause
+exit /b 1

@@ -7,7 +7,7 @@
 //=====================================================================================
 //=====================================================================================
 
-#define _WIN32_WINNT 0x0A00 // Definir la versión de Windows para compatibilidad
+#define _WIN32_WINNT 0x0A00
 #include "../libs/httplib.h"
 #include "injection_engine.h"
 #include <iostream>
@@ -18,28 +18,45 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <commdlg.h> // Para el diálogo de archivos
 
 #define SERVER_PORT 12345
 
-// Función para obtener la ruta del directorio donde se encuentra el .exe
 std::string get_executable_dir() {
     char buffer[MAX_PATH];
     GetModuleFileNameA(NULL, buffer, MAX_PATH);
     return std::filesystem::path(buffer).parent_path().string();
 }
 
-// Función para recortar comillas
 std::string trim_quotes(std::string s) {
     s.erase(std::remove(s.begin(), s.end(), '"'), s.end());
     return s;
 }
 
+// NUEVA FUNCIÓN: Abrir diálogo nativo para seleccionar archivos
+std::string open_file_dialog(const char* filter) {
+    OPENFILENAMEA ofn;
+    char szFile[260] = {0};
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = NULL;
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = filter;
+    ofn.nFilterIndex = 1;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+    if (GetOpenFileNameA(&ofn) == TRUE) {
+        return ofn.lpstrFile;
+    }
+    return "";
+}
+
+
 int main() {
-    // Establecer la página de códigos de la consola a UTF-8
     SetConsoleOutputCP(CP_UTF8);
     setvbuf(stdout, nullptr, _IOFBF, 1000);
 
-    // Asignar consola para logging
     AllocConsole();
     FILE* f;
     freopen_s(&f, "CONOUT$", "w", stdout);
@@ -49,7 +66,6 @@ int main() {
     std::cout << "          🔥 Belzebub - Professional Suite 🔥" << std::endl;
     std::cout << "=================================================" << std::endl;
 
-    // Establecer el directorio de trabajo al del ejecutable
     std::string exe_dir = get_executable_dir();
     SetCurrentDirectoryA(exe_dir.c_str());
     std::cout << "[INFO] Directorio de trabajo establecido en: " << exe_dir << std::endl;
@@ -79,7 +95,7 @@ int main() {
         }
     });
 
-    // --- API Endpoints ---
+    // --- API Endpoints (Existentes) ---
     svr.Get("/api/status", [&](const httplib::Request&, httplib::Response& res) {
         res.set_content(engine.GetSystemStatus().dump(), "application/json; charset=utf-8");
     });
@@ -153,6 +169,29 @@ int main() {
         int entryId = body["entryId"];
         std::string script = body["script"];
         res.set_content(engine.UpdateCheatScript(ctPath, entryId, script).dump(), "application/json; charset=utf-8");
+    });
+
+    // --- NUEVO ENDPOINT PARA EL EXPLORADOR DE ARCHIVOS NATIVO ---
+    svr.Get("/api/browse-file", [&](const httplib::Request& req, httplib::Response& res) {
+        std::string filter = "Todos los Archivos\0*.*\0";
+        if (req.has_param("ext")) {
+            auto ext = req.get_param_value("ext");
+            if (ext == "dll") {
+                filter = "DLLs (*.dll)\0*.dll\0Todos los Archivos\0*.*\0";
+            } else if (ext == "ct") {
+                filter = "Cheat Tables (*.ct)\0*.ct\0Todos los Archivos\0*.*\0";
+            }
+        }
+        std::string path = open_file_dialog(filter.c_str());
+        json result;
+        if (!path.empty()) {
+            result["success"] = true;
+            result["path"] = path;
+        } else {
+            result["success"] = false;
+            result["message"] = "Dialogo cancelado por el usuario.";
+        }
+        res.set_content(result.dump(), "application/json; charset=utf-8");
     });
 
     std::string url = "http://localhost:" + std::to_string(SERVER_PORT);

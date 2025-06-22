@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BYOVD Professional Suite v3.0</title>
+    <style>
+        :root {
+            --bg-dark: #121212; --bg-light: #1e1e1e; --primary: #00aaff;
+            --secondary: #00e5ff; --success: #4caf50; --error: #f44336; --text: #e0e0e0;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-dark);
+            color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px;
+        }
+        .card { background-color: var(--bg-light); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--primary); }
+        .card-header h2 { margin: 0; color: var(--primary); font-size: 1.2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        input[type="text"], input[type="number"], input[type="file"], select {
+            width: 100%; padding: 10px; border: 1px solid #444; border-radius: 6px;
+            background-color: #2a2a2a; color: var(--text); box-sizing: border-box;
+        }
+        input::file-selector-button { background-color: var(--primary); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; }
+        button {
+            padding: 10px 15px; border: none; border-radius: 6px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--secondary); }
+        .btn-danger { background-color: var(--error); color: white; }
+        .log-area {
+            background-color: #0a0a0a; height: 250px; overflow-y: auto; padding: 10px;
+            border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.9rem;
+        }
+        .log-entry { margin-bottom: 5px; }
+        .log-info { color: var(--secondary); } .log-success { color: var(--success); } .log-error { color: var(--error); }
+        #driverList, #cheatEntries { list-style: none; padding: 0; max-height: 200px; overflow-y: auto; }
+        #driverList li, #cheatEntries li {
+            background-color: #2a2a2a; padding: 10px; margin-bottom: 5px; border-radius: 5px;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+        }
+        #driverList li.selected { background-color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <header class="card">
+        <div class="card-header">
+            <h2>🚀 BYOVD Professional Suite v3.0</h2>
+        </div>
+        <div id="statusBar" style="display: flex; gap: 20px;">
+            <div><strong>Estado del Driver:</strong> <span id="driverStatus">No Cargado</span></div>
+            <div><strong>Driver Actual:</strong> <span id="currentDriverName">Ninguno</span></div>
+        </div>
+    </header>
+
+    <div class="grid">
+        <!-- Columna 1: Control de Drivers y Procesos -->
+        <div class="card">
+            <div class="card-header"><h2>1. Gestión de Drivers y Procesos</h2></div>
+            
+            <div class="form-group">
+                <label>Drivers Disponibles</label>
+                <ul id="driverList"><li class="log-info">Cargando...</li></ul>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button id="loadDriverBtn" class="btn-primary">Cargar Seleccionado</button>
+                    <button id="unloadDriverBtn" class="btn-danger">Descargar Actual</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="processName">Buscar Proceso</label>
+                <input type="text" id="processName" placeholder="notepad.exe">
+                <button id="findProcessBtn" style="margin-top: 5px;">Buscar</button>
+            </div>
+
+             <div class="form-group">
+                <label for="processSelect">Proceso Objetivo (PID)</label>
+                <select id="processSelect"></select>
+            </div>
+        </div>
+
+        <!-- Columna 2: Inyección y Control de Cheats -->
+        <div class="card">
+            <div class="card-header"><h2>2. Inyección y Control</h2></div>
+            
+            <div class="form-group">
+                <label for="dllPath">Inyección de DLL</label>
+                <input type="text" id="dllPath" placeholder="C:\ruta\a\mi.dll">
+                <button id="injectDllBtn" style="margin-top: 5px;">Inyectar DLL</button>
+            </div>
+
+            <div class="form-group">
+                <label for="ctPath">Cargar Cheat Table (.CT)</label>
+                 <input type="text" id="ctPath" placeholder="C:\ruta\a\tabla.ct">
+                <button id="loadCtBtn" style="margin-top: 5px;">Cargar e Inspeccionar</button>
+            </div>
+
+             <div class="form-group">
+                <label>Entradas de la Tabla</label>
+                <ul id="cheatEntries"><li>Carga una tabla para ver las entradas.</li></ul>
+            </div>
+        </div>
+        
+        <!-- Columna 3: Speedhack y Logs -->
+        <div class="card">
+             <div class="card-header"><h2>3. Herramientas y Logs</h2></div>
+             <div class="form-group">
+                <label for="speedhackSlider">Speedhack: <span id="speedValue">1.0</span>x</label>
+                <input type="range" id="speedhackSlider" min="0.1" max="5" step="0.1" value="1.0" style="width: 100%;">
+            </div>
+            <div class="form-group">
+                <label>Registro de Actividad</label>
+                <div id="logArea" class="log-area"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = {
+            async post(endpoint, body) {
+                try {
+                    const response = await fetch(`/api/${endpoint}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(body)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    log(`Error en API: ${error}`, 'error');
+                    return { success: false, message: error.message };
+                }
+            },
+            async get(endpoint) {
+                try {
+                    const response = await fetch(`/api/${endpoint}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    log(`Error en API: ${error}`, 'error');
+                    return null;
+                }
+            }
+        };
+
+        let state = {
+            selectedDriverId: null,
+            targetPID: null,
+            ctPath: '',
+            cheatEntries: [],
+        };
+        
+        // --- Logging ---
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        // --- Actualizaciones de UI ---
+        function updateDriverStatus(status) {
+            document.getElementById('driverStatus').textContent = status.driverLoaded ? 'Cargado' : 'No Cargado';
+            document.getElementById('currentDriverName').textContent = status.currentDriverName;
+            document.getElementById('driverStatus').style.color = status.driverLoaded ? 'var(--success)' : 'var(--error)';
+        }
+
+        function renderDriverList(drivers) {
+            const list = document.getElementById('driverList');
+            list.innerHTML = '';
+            drivers.forEach(driver => {
+                const li = document.createElement('li');
+                li.dataset.driverId = driver.id;
+                li.innerHTML = `<span>${driver.name} (${driver.tier})</span><span style="color:${driver.status === 'Disponible' ? 'var(--success)' : 'var(--error)'}">${driver.status}</span>`;
+                li.onclick = () => {
+                    document.querySelectorAll('#driverList li').forEach(el => el.classList.remove('selected'));
+                    li.classList.add('selected');
+                    state.selectedDriverId = driver.id;
+                    log(`Driver seleccionado: ${driver.name}`);
+                };
+                list.appendChild(li);
+            });
+        }
+
+        function renderProcessList(processes) {
+            const select = document.getElementById('processSelect');
+            select.innerHTML = '';
+            if (processes.length > 0) {
+                processes.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.pid;
+                    option.textContent = `${p.name} (PID: ${p.pid})`;
+                    select.appendChild(option);
+                });
+                state.targetPID = select.value;
+                log(`${processes.length} procesos encontrados. '${processes[0].name}' seleccionado por defecto.`);
+            } else {
+                log('No se encontraron procesos con ese nombre.', 'error');
+            }
+        }
+        
+        function renderCheatEntries(entries) {
+            state.cheatEntries = entries;
+            const list = document.getElementById('cheatEntries');
+            list.innerHTML = '';
+            if(entries.length === 0){
+                list.innerHTML = '<li>No se encontraron entradas en la tabla.</li>';
+                return;
+            }
+            entries.forEach(entry => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${entry.description}</span>
+                    <div style="display:flex; gap: 5px;">
+                        <input type="text" placeholder="Nuevo valor" class="cheat-value-input" data-entry-id="${entry.id}" style="width: 80px; padding: 5px;">
+                        <input type="checkbox" class="cheat-activate-toggle" data-entry-id="${entry.id}" title="Activar/Desactivar">
+                    </div>`;
+                list.appendChild(li);
+            });
+        }
+
+        // --- Lógica de Negocio y Eventos ---
+        async function initialize() {
+            log('Inicializando Suite Profesional BYOVD v3.0...');
+            const status = await API.get('status');
+            if(status) updateDriverStatus(status);
+
+            const drivers = await API.get('drivers');
+            if(drivers) renderDriverList(drivers);
+            
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            // Drivers
+            document.getElementById('loadDriverBtn').onclick = async () => {
+                if (state.selectedDriverId === null) return log('Por favor, selecciona un driver primero.', 'error');
+                log(`Cargando driver ID: ${state.selectedDriverId}...`);
+                const res = await API.post('load_driver', { id: state.selectedDriverId });
+                log(res.message, res.success ? 'success' : 'error');
+                if(res.success) updateDriverStatus(await API.get('status'));
+            };
+
+            document.getElementById('unloadDriverBtn').onclick = async () => {
+                log('Descargando driver actual...');
+                const res = await API.post('unload_driver', {});
+                log(res.message, res.success ? 'success' : 'error');
+                if(res.success) updateDriverStatus(await API.get('status'));
+            };
+
+            // Procesos
+            document.getElementById('findProcessBtn').onclick = async () => {
+                const processName = document.getElementById('processName').value;
+                if (!processName) return log('Ingresa un nombre de proceso.', 'error');
+                log(`Buscando procesos que coincidan con '${processName}'...`);
+                const res = await API.post('find_process', { processName });
+                if (res.success) renderProcessList(res.processes);
+            };
+            document.getElementById('processSelect').onchange = (e) => state.targetPID = e.target.value;
+
+            // Inyección y CT
+            document.getElementById('injectDllBtn').onclick = async () => {
+                if (!state.targetPID) return log('Selecciona un proceso objetivo primero.', 'error');
+                const dllPath = document.getElementById('dllPath').value;
+                if (!dllPath) return log('Ingresa la ruta de la DLL.', 'error');
+                log(`Inyectando '${dllPath}' en PID ${state.targetPID}...`);
+                const res = await API.post('inject_dll', { pid: parseInt(state.targetPID), dllPath });
+                log(res.message, res.success ? 'success' : 'error');
+            };
+
+            document.getElementById('loadCtBtn').onclick = async () => {
+                if (!state.targetPID) return log('Selecciona un proceso objetivo primero.', 'error');
+                state.ctPath = document.getElementById('ctPath').value;
+                if (!state.ctPath) return log('Ingresa la ruta del archivo .CT.', 'error');
+                
+                log(`Cargando '${state.ctPath}' en Cheat Engine y adjuntando a PID ${state.targetPID}...`);
+                const loadRes = await API.post('load_ct', { pid: parseInt(state.targetPID), ctPath: state.ctPath });
+                log(loadRes.message, loadRes.success ? 'success' : 'error');
+
+                if (loadRes.success) {
+                    log('Inspeccionando entradas de la tabla...');
+                    const entriesRes = await API.post('get_ct_entries', { ctPath: state.ctPath });
+                    if(entriesRes.success) renderCheatEntries(entriesRes.entries);
+                }
+            };
+            
+            // Eventos delegados para las entradas de la tabla
+            document.getElementById('cheatEntries').addEventListener('change', async (e) => {
+                if (e.target.classList.contains('cheat-activate-toggle')) {
+                    const entryId = e.target.dataset.entryId;
+                    const activate = e.target.checked;
+                    log(`${activate ? 'Activando' : 'Desactivando'} entrada ID ${entryId}...`);
+                    await API.post('control_cheat', { pid: parseInt(state.targetPID), ctPath: state.ctPath, entryId: parseInt(entryId), activate });
+                }
+            });
+             document.getElementById('cheatEntries').addEventListener('keypress', async (e) => {
+                if (e.key === 'Enter' && e.target.classList.contains('cheat-value-input')) {
+                     const entryId = e.target.dataset.entryId;
+                     const value = e.target.value;
+                     log(`Estableciendo valor de entrada ID ${entryId} a '${value}'...`);
+                     await API.post('set_cheat_value', { pid: parseInt(state.targetPID), ctPath: state.ctPath, entryId: parseInt(entryId), value });
+                }
+            });
+
+            // Speedhack
+            document.getElementById('speedhackSlider').oninput = (e) => {
+                 document.getElementById('speedValue').textContent = parseFloat(e.target.value).toFixed(1);
+            };
+            document.getElementById('speedhackSlider').onchange = async (e) => {
+                if (!state.targetPID) {
+                    log('Selecciona un proceso objetivo para usar speedhack.', 'error');
+                    e.target.value = 1.0;
+                    document.getElementById('speedValue').textContent = "1.0";
+                    return;
+                }
+                const speed = parseFloat(e.target.value);
+                log(`Estableciendo velocidad de speedhack a ${speed}x...`);
+                await API.post('set_speedhack', { pid: parseInt(state.targetPID), speed });
+            };
+        }
+
+        window.onload = initialize;
+    </script>
+</body>
+</html> 

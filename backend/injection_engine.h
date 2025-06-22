@@ -1,76 +1,72 @@
+/*
+ * =====================================================================================
+ *
+ * >>> ARCHIVO: backend/injection_engine.h <<<
+ *
+ * Copia y pega TODO el código de abajo en tu archivo "injection_engine.h".
+ * (Este archivo solo contiene DECLARACIONES de funciones, terminadas en ';')
+ *
+ * =====================================================================================
+ */
 #pragma once
 #include <string>
 #include <vector>
 #include <windows.h>
+#include "../libs/json.hpp" // Integración de la librería JSON
 
-// **🔥 ESTRUCTURA DE INFORMACIÓN DE DRIVER**
+using json = nlohmann::json;
+
+// Estructura de información del driver
 struct DriverInfo {
-    std::string name;        // Nombre descriptivo
-    std::string filename;    // Nombre del archivo .sys
-    std::string tier;        // Premium/Standard/High-Risk
-    std::string cve;         // CVE number si disponible
-    std::string source;      // Software de origen
-    std::string description; // Descripción del riesgo/compatibilidad
+    std::string name;
+    std::string filename;
+    std::string tier;
+    std::string cve;
+    std::string source;
+    std::string description;
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(DriverInfo, name, filename, tier, cve, source, description);
 };
 
-// **🔥 CLASE PRINCIPAL DEL MOTOR DE INYECCIÓN**
+// Declaración de la clase InjectionEngine
 class InjectionEngine {
 private:
-    std::vector<DriverInfo> drivers;        // Base de datos de drivers
-    int currentDriverIndex;                 // Índice del driver actualmente cargado
-    std::string currentServiceName;         // Nombre del servicio actual
+    // --- MIEMBROS PRIVADOS ---
+    std::vector<DriverInfo> drivers;
+    int currentDriverIndex;
+    std::string currentServiceName;
 
-    // Inicializa la base de datos interna de drivers
+    // --- MÉTODOS PRIVADOS (SOLO DECLARACIONES) ---
     void InitializeDriverDatabase();
+    std::string GenerateRandomString(int length);
+    bool ExecuteLuaScript(const std::string& scriptContent, DWORD processId);
 
 public:
-    // Constructor y Destructor
+    // --- CONSTRUCTOR Y DESTRUCTOR ---
     InjectionEngine();
     ~InjectionEngine();
 
-    // **🎯 FUNCIONES PRINCIPALES DE INYECCIÓN**
+    // --- GESTIÓN DE DRIVERS ---
+    json ListAvailableDrivers();
+    json LoadDriver(int driverIndex);
+    json UnloadDriver();
+    json GetDriverInfoJson(int driverIndex);
     
-    // Inyecta una DLL usando Cheat Engine real
-    bool InjectDLL(DWORD processId, const std::string& dllPath);
+    // --- FUNCIONALIDAD PRINCIPAL CON CHEAT ENGINE ---
+    json InjectDLL(DWORD processId, const std::string& dllPath);
+    json FindProcess(const std::string& processName);
     
-    // Escanea memoria usando Cheat Engine
-    bool ScanMemory(DWORD processId, const std::string& value, const std::string& valueType);
-    
-    // Encuentra proceso por nombre (mejorado)
-    DWORD FindProcess(const std::string& processName);
-    
-    // **🎯 SOPORTE DE CHEAT TABLES (.CT)**
-    
-    // Carga un archivo .CT en Cheat Engine para el proceso especificado
-    bool LoadCheatTable(const std::string& ctFilePath, DWORD processId);
-    
-    // **🔧 GESTIÓN DE DRIVERS BYOVD**
-    
-    // Lista todos los drivers .sys disponibles en carpeta drivers/
-    std::vector<std::string> ListAvailableDrivers();
-    
-    // Carga un driver específico por índice
-    bool LoadDriver(int driverIndex);
-    
-    // Descarga el driver actualmente cargado
-    bool UnloadDriver();
-    
-    // Obtiene información detallada de un driver por índice
-    std::string GetDriverInfo(int driverIndex);
-    
-    // **📊 FUNCIONES DE UTILIDAD**
-    
-    // Obtiene el número total de drivers en la base de datos
-    size_t GetDriverCount() const { return drivers.size(); }
-    
-    // Verifica si hay un driver cargado actualmente
-    bool IsDriverLoaded() const { return currentDriverIndex >= 0; }
-    
-    // Obtiene el nombre del driver actualmente cargado
-    std::string GetCurrentDriverName() const {
-        if (currentDriverIndex >= 0 && currentDriverIndex < static_cast<int>(drivers.size())) {
-            return drivers[currentDriverIndex].name;
-        }
-        return "Ninguno";
-    }
-}; 
+    // --- CONTROL PROGRAMÁTICO DE CHEAT TABLE (.CT) ---
+    json LoadCheatTable(const std::string& ctFilePath, DWORD processId);
+    json GetCheatTableEntries(const std::string& ctFilePath);
+    json ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate);
+    json SetCheatEntryValue(const std::string& ctFilePath, DWORD processId, int entryId, const std::string& value);
+
+    // --- FUNCIONES AVANZADAS DE CE ---
+    json SetSpeedhack(DWORD processId, float speed);
+
+    // --- FUNCIONES DE UTILIDAD ---
+    size_t GetDriverCount() const;
+    bool IsDriverLoaded() const;
+    std::string GetCurrentDriverName() const;
+    json GetSystemStatus();
+};

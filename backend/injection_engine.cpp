@@ -1,499 +1,337 @@
+/*
+ * =====================================================================================
+ *
+ * >>> ARCHIVO: backend/injection_engine.cpp <<<
+ *
+ * Copia y pega TODO el código de abajo en tu archivo "injection_engine.cpp".
+ * (Este archivo contiene las IMPLEMENTACIONES de las funciones, con el cuerpo '{...}')
+ *
+ * =====================================================================================
+ */
 #include "injection_engine.h"
 #include <windows.h>
 #include <tlhelp32.h>
-#include <psapi.h>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <random>
+#include <regex>
 
-// Constructor
+// --- IMPLEMENTACIONES DE LAS FUNCIONES DE INJECTIONENGINE ---
+
 InjectionEngine::InjectionEngine() : currentDriverIndex(-1) {
     InitializeDriverDatabase();
 }
 
-// Destructor
 InjectionEngine::~InjectionEngine() {
-    if (currentDriverIndex >= 0) {
+    if (IsDriverLoaded()) {
         UnloadDriver();
     }
 }
 
-// Implementación de inyección usando Cheat Engine real
-bool InjectionEngine::InjectDLL(DWORD processId, const std::string& dllPath) {
-    std::cout << "[INJECTION] Iniciando inyección real con Cheat Engine...\n";
-    
-    std::string ce64Path = "core_dlls\\cheatengine-x86_64.exe";
-    std::string ce32Path = "core_dlls\\cheatengine-i386.exe";
-    
-    if (!std::filesystem::exists(ce64Path) || !std::filesystem::exists(ce32Path)) {
-        std::cerr << "[ERROR] Ejecutables de Cheat Engine no encontrados!\n";
-        return false;
+std::string InjectionEngine::GenerateRandomString(int length) {
+    const std::string chars = "abcdefghijklmnopqrstuvwxyz";
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_int_distribution<> distribution(0, chars.size() - 1);
+    std::string random_string;
+    for (int i = 0; i < length; ++i) {
+        random_string += chars[distribution(generator)];
     }
-    
-    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
-    if (!hProcess) {
-        std::cerr << "[ERROR] No se puede acceder al proceso ID: " << processId << std::endl;
-        return false;
-    }
-    
-    BOOL isWow64 = FALSE;
-    IsWow64Process(hProcess, &isWow64);
-    bool isProcess32Bit = isWow64;
-    CloseHandle(hProcess);
-    
-    std::string ceExecutable = isProcess32Bit ? ce32Path : ce64Path;
-    std::cout << "[INFO] Usando " << (isProcess32Bit ? "CE 32-bit" : "CE 64-bit") << " para proceso " << processId << std::endl;
-    
-    std::stringstream cmd;
-    cmd << "\"" << ceExecutable << "\" --inject-dll=" << processId << "=" << dllPath;
-    
-    std::cout << "[CMD] " << cmd.str() << std::endl;
-    
-    STARTUPINFOA si = {sizeof(si)};
-    PROCESS_INFORMATION pi = {0};
-    
-    bool success = CreateProcessA(
-        NULL,
-        const_cast<char*>(cmd.str().c_str()),
-        NULL, NULL, FALSE,
-        CREATE_NO_WINDOW,
-        NULL, NULL, &si, &pi
-    );
-    
-    if (success) {
-        std::cout << "[SUCCESS] Proceso de inyección iniciado (PID: " << pi.dwProcessId << ")\n";
-        
-        WaitForSingleObject(pi.hProcess, 30000);
-        
-        DWORD exitCode;
-        GetExitCodeProcess(pi.hProcess, &exitCode);
-        
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        
-        bool injectionSuccess = (exitCode == 0);
-        if (injectionSuccess) {
-            std::cout << "[SUCCESS] Inyección completada exitosamente!\n";
-        } else {
-            std::cout << "[WARNING] Cheat Engine terminó con código: " << exitCode << std::endl;
-        }
-        
-        return injectionSuccess;
-    } else {
-        std::cerr << "[ERROR] No se pudo ejecutar Cheat Engine. Error: " << GetLastError() << std::endl;
-        return false;
-    }
+    return random_string;
 }
 
-// Scanner de memoria usando Cheat Engine
-bool InjectionEngine::ScanMemory(DWORD processId, const std::string& value, const std::string& valueType) {
-    std::cout << "[MEMORY_SCAN] Iniciando escaneo con Cheat Engine...\n";
+void InjectionEngine::InitializeDriverDatabase() {
+    drivers = {
+        {"Gigabyte GDrv", "gdrv.sys", "Premium", "CVE-2018-19320", "Gigabyte App Center", "Excelente compatibilidad con todos los anti-cheats"},
+        {"MSI MSIo", "msio64.sys", "Premium", "CVE-2019-16098", "MSI Afterburner/Dragon Center", "Alto éxito con BattlEye y EAC"},
+        {"ASUS AsIO", "AsIO3.sys", "Premium", "CVE-2020-15368", "ASUS Armoury Crate/AI Suite", "Compatible con Vanguard y VAC"},
+        {"MSI RTCore", "RTCore64.sys", "Standard", "CVE-2019-16098", "MSI Afterburner", "Funciona bien con la mayoría de juegos"},
+        {"CPU-Z", "cpuz159_x64.sys", "Standard", "CVE-2017-15302", "CPU-Z Official", "Driver estable y ampliamente disponible"},
+        {"Process Hacker", "kprocesshacker.sys", "High-Risk", "CVE-2020-13833", "Process Hacker", "ALTO RIESGO - Detectado fácilmente"}
+    };
+}
+
+json InjectionEngine::ListAvailableDrivers() {
+    json result = json::array();
+    int index = 0;
+    for (const auto& db_driver : drivers) {
+        json driver_info = db_driver;
+        driver_info["id"] = index++;
+        if (std::filesystem::exists("drivers/" + db_driver.filename)) {
+            driver_info["status"] = "Disponible";
+        } else {
+            driver_info["status"] = "No Encontrado";
+        }
+        result.push_back(driver_info);
+    }
+    return result;
+}
+
+json InjectionEngine::LoadDriver(int driverIndex) {
+    if (IsDriverLoaded()) {
+        return {{"success", false}, {"message", "Ya hay un driver cargado. Descárgalo primero."}};
+    }
+    if (driverIndex < 0 || driverIndex >= static_cast<int>(drivers.size())) {
+        return {{"success", false}, {"message", "Índice de driver inválido."}};
+    }
+
+    const auto& driver = drivers[driverIndex];
+    std::string driverPath = "drivers\\" + driver.filename;
+    char absolutePath[MAX_PATH];
+    if (GetFullPathNameA(driverPath.c_str(), MAX_PATH, absolutePath, NULL) == 0) {
+         return {{"success", false}, {"message", "No se pudo encontrar el archivo del driver: " + driverPath}};
+    }
+
+    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+    if (!hSCM) {
+        return {{"success", false}, {"message", "Error al abrir SCM (¿sin permisos de admin?): " + std::to_string(GetLastError())}};
+    }
+
+    currentServiceName = GenerateRandomString(12);
+    SC_HANDLE hService = CreateServiceA(hSCM, currentServiceName.c_str(), currentServiceName.c_str(), SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, absolutePath, NULL, NULL, NULL, NULL, NULL);
     
-    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId);
-    if (!hProcess) return false;
+    if (!hService) {
+        if (GetLastError() == ERROR_SERVICE_EXISTS) {
+            hService = OpenServiceA(hSCM, currentServiceName.c_str(), SERVICE_ALL_ACCESS);
+        }
+        if (!hService) {
+            CloseServiceHandle(hSCM);
+            return {{"success", false}, {"message", "No se pudo crear/abrir el servicio del driver: " + std::to_string(GetLastError())}};
+        }
+    }
+
+    if (!StartService(hService, 0, NULL)) {
+        if (GetLastError() != ERROR_SERVICE_ALREADY_RUNNING) {
+            DeleteService(hService);
+            CloseServiceHandle(hService);
+            CloseServiceHandle(hSCM);
+            return {{"success", false}, {"message", "No se pudo iniciar el servicio del driver: " + std::to_string(GetLastError())}};
+        }
+    }
+
+    CloseServiceHandle(hService);
+    CloseServiceHandle(hSCM);
+    currentDriverIndex = driverIndex;
+    return {{"success", true}, {"message", "Driver '" + driver.name + "' cargado como '" + currentServiceName + "'."}};
+}
+
+json InjectionEngine::UnloadDriver() {
+    if (!IsDriverLoaded()) {
+        return {{"success", false}, {"message", "No hay ningún driver cargado."}};
+    }
+
+    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (!hSCM) return {{"success", false}, {"message", "Error al abrir SCM."}};
+
+    SC_HANDLE hService = OpenServiceA(hSCM, currentServiceName.c_str(), SERVICE_STOP | DELETE);
+    if (!hService) {
+        CloseServiceHandle(hSCM);
+        return {{"success", false}, {"message", "No se pudo abrir el servicio para detenerlo."}};
+    }
+
+    SERVICE_STATUS status;
+    ControlService(hService, SERVICE_CONTROL_STOP, &status);
     
-    BOOL isWow64 = FALSE;
-    IsWow64Process(hProcess, &isWow64);
-    bool isProcess32Bit = isWow64;
-    CloseHandle(hProcess);
+    DeleteService(hService);
+
+    CloseServiceHandle(hService);
+    CloseServiceHandle(hSCM);
     
-    std::string ceExecutable = isProcess32Bit ? 
-        "core_dlls\\cheatengine-i386.exe" : 
-        "core_dlls\\cheatengine-x86_64.exe";
+    std::string unloadedDriverName = GetCurrentDriverName();
+    currentDriverIndex = -1;
+    currentServiceName = "";
+
+    return {{"success", true}, {"message", "Driver '" + unloadedDriverName + "' descargado."}};
+}
+
+bool InjectionEngine::ExecuteLuaScript(const std::string& scriptContent, DWORD processId) {
+    std::string ceExecutable = "core_dlls\\cheatengine-x86_64.exe";
+    std::string tempScriptName = "temp_script_" + GenerateRandomString(8) + ".lua";
     
-    std::string scriptPath = "temp_scan_script.lua";
-    std::ofstream script(scriptPath);
-    script << "-- Script de escaneo automático\n";
-    script << "openProcess('" << processId << "')\n";
-    script << "memScan = createMemScan()\n";
-    script << "memScan.firstScan('" << value << "', vtDword, '" << valueType << "')\n";
-    script << "print('Escaneo completado: ' .. memScan.getCount() .. ' resultados')\n";
-    script.close();
-    
+    std::ofstream scriptFile(tempScriptName);
+    if (!scriptFile) return false;
+    scriptFile << scriptContent;
+    scriptFile.close();
+
     std::stringstream cmd;
-    cmd << "\"" << ceExecutable << "\" --script=" << scriptPath;
-    
+    if (processId != 0) {
+         cmd << "\"" << ceExecutable << "\" --process=" << processId << " -s \"" << tempScriptName << "\"";
+    } else {
+         cmd << "\"" << ceExecutable << "\" -s \"" << tempScriptName << "\"";
+    }
+
     STARTUPINFOA si = {sizeof(si)};
     PROCESS_INFORMATION pi = {0};
-    
-    bool success = CreateProcessA(NULL, const_cast<char*>(cmd.str().c_str()), 
-                                 NULL, NULL, FALSE, CREATE_NO_WINDOW, 
-                                 NULL, NULL, &si, &pi);
-    
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+
+    bool success = CreateProcessA(NULL, const_cast<char*>(cmd.str().c_str()), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+
     if (success) {
-        WaitForSingleObject(pi.hProcess, 60000);
+        WaitForSingleObject(pi.hProcess, 10000);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
-        
-        std::filesystem::remove(scriptPath);
-        
-        std::cout << "[SUCCESS] Escaneo de memoria completado\n";
+        std::filesystem::remove(tempScriptName);
         return true;
     }
     
-    std::filesystem::remove(scriptPath);
+    std::filesystem::remove(tempScriptName);
     return false;
 }
 
-// Búsqueda de proceso mejorada
-DWORD InjectionEngine::FindProcess(const std::string& processName) {
-    std::cout << "[PROCESS_SEARCH] Buscando proceso: " << processName << std::endl;
+json InjectionEngine::InjectDLL(DWORD processId, const std::string& dllPath) {
+    if (!IsDriverLoaded()){
+        return {{"success", false}, {"message", "Necesitas cargar un driver primero."}};
+    }
+    if (!std::filesystem::exists(dllPath)){
+        return {{"success", false}, {"message", "La ruta de la DLL no existe."}};
+    }
     
+    std::string script = "local pid = " + std::to_string(processId) + "\n";
+    script += "local result = injectDll(pid, [[" + dllPath + "]])\n";
+    script += "print('Resultado de inyección: ' .. tostring(result))";
+
+    if (ExecuteLuaScript(script, processId)) {
+        return {{"success", true}, {"message", "Comando de inyección enviado a Cheat Engine."}};
+    }
+    return {{"success", false}, {"message", "Fallo al ejecutar el script de inyección de CE."}};
+}
+
+json InjectionEngine::LoadCheatTable(const std::string& ctFilePath, DWORD processId) {
+     if (!std::filesystem::exists(ctFilePath)) {
+        return {{"success", false}, {"message", "El archivo .CT no existe."}};
+    }
+    std::string ceExecutable = "core_dlls\\cheatengine-x86_64.exe";
+    std::stringstream cmd;
+    cmd << "\"" << ceExecutable << "\" \"" << ctFilePath << "\" --process=" << processId;
+
+    STARTUPINFOA si = {sizeof(si)};
+    PROCESS_INFORMATION pi = {0};
+
+    if (CreateProcessA(NULL, const_cast<char*>(cmd.str().c_str()), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        return {{"success", true}, {"message", "Cheat Engine iniciado con la tabla y adjunto al proceso."}};
+    }
+    return {{"success", false}, {"message", "No se pudo iniciar Cheat Engine."}};
+}
+
+json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
+    if (!std::filesystem::exists(ctFilePath)) {
+        return {{"success", false}, {"message", "El archivo .CT no existe."}};
+    }
+    std::ifstream file(ctFilePath);
+    if (!file.is_open()) {
+        return {{"success", false}, {"message", "No se pudo abrir el archivo .CT."}};
+    }
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    json entries = json::array();
+    std::regex re("<Description>\"(.*?)\"</Description>");
+    auto words_begin = std::sregex_iterator(content.begin(), content.end(), re);
+    auto words_end = std::sregex_iterator();
+
+    int id = 0;
+    for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+        std::smatch match = *i;
+        if (match.size() > 1) {
+            entries.push_back({
+                {"id", id++},
+                {"description", match[1].str()}
+            });
+        }
+    }
+    return {{"success", true}, {"entries", entries}};
+}
+
+json InjectionEngine::ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate) {
+    std::string action = activate ? "true" : "false";
+    std::string script = "local al = getAddressList()\n";
+    script += "local entry = al.getMemoryRecordByID(" + std::to_string(entryId) + ")\n";
+    script += "if entry then entry.Active = " + action + " end";
+    
+    if (ExecuteLuaScript(script, processId)) {
+        return {{"success", true}, {"message", "Comando de control de entrada enviado."}};
+    }
+    return {{"success", false}, {"message", "Fallo al ejecutar el script de control."}};
+}
+
+json InjectionEngine::SetCheatEntryValue(const std::string& ctFilePath, DWORD processId, int entryId, const std::string& value) {
+    std::string script = "local al = getAddressList()\n";
+    script += "local entry = al.getMemoryRecordByID(" + std::to_string(entryId) + ")\n";
+    script += "if entry then entry.Value = [[" + value + "]] end";
+
+    if (ExecuteLuaScript(script, processId)) {
+        return {{"success", true}, {"message", "Comando de cambio de valor enviado."}};
+    }
+    return {{"success", false}, {"message", "Fallo al ejecutar el script de cambio de valor."}};
+}
+
+json InjectionEngine::SetSpeedhack(DWORD processId, float speed) {
+    std::string script = "speedhack_setSpeed(" + std::to_string(speed) + ")";
+    if (ExecuteLuaScript(script, processId)) {
+        return {{"success", true}, {"message", "Comando de speedhack enviado."}};
+    }
+    return {{"success", false}, {"message", "Fallo al ejecutar el script de speedhack."}};
+}
+
+json InjectionEngine::FindProcess(const std::string& processName) {
+    json processes = json::array();
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE) {
-        std::cerr << "[ERROR] No se pudo crear snapshot de procesos\n";
-        return 0;
+        return {{"success", false}, {"message", "No se pudo crear snapshot de procesos."}};
     }
     
     PROCESSENTRY32 pe32;
     pe32.dwSize = sizeof(PROCESSENTRY32);
     
-    std::vector<DWORD> matchingProcesses;
-    
     if (Process32First(hSnapshot, &pe32)) {
         do {
             std::string currentProcess = pe32.szExeFile;
-            
-            if (currentProcess == processName || 
-                currentProcess.find(processName) != std::string::npos) {
-                matchingProcesses.push_back(pe32.th32ProcessID);
-                std::cout << "[FOUND] " << currentProcess << " (PID: " << pe32.th32ProcessID << ")\n";
+            if (currentProcess.find(processName) != std::string::npos) {
+                processes.push_back({
+                    {"pid", pe32.th32ProcessID},
+                    {"name", currentProcess}
+                });
             }
         } while (Process32Next(hSnapshot, &pe32));
     }
     
     CloseHandle(hSnapshot);
-    
-    if (matchingProcesses.empty()) {
-        std::cout << "[INFO] No se encontraron procesos con nombre: " << processName << std::endl;
-        return 0;
-    } else if (matchingProcesses.size() == 1) {
-        std::cout << "[SUCCESS] Proceso encontrado: PID " << matchingProcesses[0] << std::endl;
-        return matchingProcesses[0];
-    } else {
-        std::cout << "[INFO] Múltiples procesos encontrados. Usando el primero: PID " << matchingProcesses[0] << std::endl;
-        return matchingProcesses[0];
-    }
+    return {{"success", true}, {"processes", processes}};
 }
 
-// Inicialización de la base de datos de drivers
-void InjectionEngine::InitializeDriverDatabase() {
-    drivers.clear();
-    
-    drivers.push_back({
-        "Gigabyte GDrv", "gdrv.sys", "Premium",
-        "CVE-2018-19320", "Gigabyte App Center",
-        "Excelente compatibilidad con todos los anti-cheats"
-    });
-    
-    drivers.push_back({
-        "MSI MSIo", "msio64.sys", "Premium", 
-        "CVE-2019-16098", "MSI Afterburner/Dragon Center",
-        "Alto éxito con BattlEye y EAC"
-    });
-    
-    drivers.push_back({
-        "ASUS AsIO", "AsIO3.sys", "Premium",
-        "CVE-2020-15368", "ASUS Armoury Crate/AI Suite",
-        "Compatible con Vanguard y VAC"
-    });
-    
-    drivers.push_back({
-        "MSI RTCore", "RTCore64.sys", "Standard",
-        "CVE-2019-16098", "MSI Afterburner",
-        "Funciona bien con la mayoría de juegos"
-    });
-    
-    drivers.push_back({
-        "CPU-Z", "cpuz159_x64.sys", "Standard",
-        "CVE-2017-15302", "CPU-Z Official",
-        "Driver estable y ampliamente disponible"
-    });
-    
-    drivers.push_back({
-        "HWiNFO", "HWiNFO_x64_205.sys", "Standard",
-        "CVE-2018-8960", "HWiNFO Official",
-        "Buena compatibilidad general"
-    });
-    
-    drivers.push_back({
-        "Cheat Engine DBK", "dbk64.sys", "High-Risk",
-        "CVE-2019-12769", "Cheat Engine",
-        "⚠️ ALTO RIESGO - Conocido por anti-cheats"
-    });
-    
-    drivers.push_back({
-        "Process Hacker", "kprocesshacker.sys", "High-Risk",
-        "CVE-2020-13833", "Process Hacker",
-        "⚠️ ALTO RIESGO - Detectado fácilmente"
-    });
-    
-    std::cout << "[INIT] Base de datos de drivers inicializada: " << drivers.size() << " drivers disponibles\n";
+size_t InjectionEngine::GetDriverCount() const {
+    return drivers.size();
 }
 
-// Lista drivers disponibles en la carpeta
-std::vector<std::string> InjectionEngine::ListAvailableDrivers() {
-    std::vector<std::string> availableDrivers;
-    std::cout << "\n[DRIVER_SCAN] Escaneando carpeta 'drivers' para archivos .sys...\n";
-    
-    try {
-        if (std::filesystem::exists("drivers") && std::filesystem::is_directory("drivers")) {
-            for (const auto& entry : std::filesystem::directory_iterator("drivers")) {
-                if (entry.is_regular_file() && entry.path().extension() == ".sys") {
-                    std::string filename = entry.path().filename().string();
-                    
-                    std::string driverInfo = "Desconocido";
-                    for (const auto& driver : drivers) {
-                        if (driver.filename == filename) {
-                            driverInfo = driver.name + " (" + driver.tier + ") - " + driver.description;
-                            break;
-                        }
-                    }
-                    
-                    availableDrivers.push_back(filename + " - " + driverInfo);
-                    std::cout << "[FOUND] " << filename << " - " << driverInfo << std::endl;
-                }
-            }
-        } else {
-            std::cout << "[WARNING] Carpeta 'drivers' no encontrada\n";
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "[ERROR] Error escaneando drivers: " << e.what() << std::endl;
-    }
-    
-    if (availableDrivers.empty()) {
-        std::cout << "[INFO] No se encontraron drivers .sys en la carpeta 'drivers'\n";
-        std::cout << "[HELP] Coloca archivos .sys de drivers vulnerables en la carpeta 'drivers'\n";
-    } else {
-        std::cout << "[SUCCESS] " << availableDrivers.size() << " drivers encontrados\n";
-    }
-    
-    return availableDrivers;
+bool InjectionEngine::IsDriverLoaded() const {
+    return currentDriverIndex >= 0;
 }
 
-// Carga un driver específico
-bool InjectionEngine::LoadDriver(int driverIndex) {
+std::string InjectionEngine::GetCurrentDriverName() const {
+    if (IsDriverLoaded()) {
+        return drivers[currentDriverIndex].name;
+    }
+    return "Ninguno";
+}
+
+json InjectionEngine::GetDriverInfoJson(int driverIndex) {
     if (driverIndex < 0 || driverIndex >= static_cast<int>(drivers.size())) {
-        std::cerr << "[ERROR] Índice de driver inválido: " << driverIndex << std::endl;
-        return false;
+        return {{"success", false}, {"message", "Índice inválido"}};
     }
-    
-    const DriverInfo& driver = drivers[driverIndex];
-    std::string driverPath = "drivers\\" + driver.filename;
-    
-    std::cout << "[DRIVER_LOAD] Intentando cargar: " << driver.name << std::endl;
-    std::cout << "[PATH] " << driverPath << std::endl;
-    
-    if (!std::filesystem::exists(driverPath)) {
-        std::cerr << "[ERROR] Archivo de driver no encontrado: " << driverPath << std::endl;
-        return false;
-    }
-    
-    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
-    if (!hSCM) {
-        std::cerr << "[ERROR] No se pudo abrir Service Control Manager. Error: " << GetLastError() << std::endl;
-        return false;
-    }
-    
-    std::string serviceName = "BYOVD_" + driver.name;
-    std::replace(serviceName.begin(), serviceName.end(), ' ', '_');
-    
-    char absolutePath[MAX_PATH];
-    GetFullPathNameA(driverPath.c_str(), MAX_PATH, absolutePath, NULL);
-    
-    SC_HANDLE hService = CreateServiceA(
-        hSCM,
-        serviceName.c_str(),
-        serviceName.c_str(),
-        SERVICE_START | DELETE | SERVICE_STOP | SERVICE_QUERY_STATUS,
-        SERVICE_KERNEL_DRIVER,
-        SERVICE_DEMAND_START,
-        SERVICE_ERROR_IGNORE,
-        absolutePath,
-        NULL, NULL, NULL, NULL, NULL
-    );
-    
-    if (!hService) {
-        DWORD error = GetLastError();
-        if (error == ERROR_SERVICE_EXISTS) {
-            hService = OpenServiceA(hSCM, serviceName.c_str(), SERVICE_START | DELETE | SERVICE_STOP);
-            if (!hService) {
-                std::cerr << "[ERROR] No se pudo abrir servicio existente\n";
-                CloseServiceHandle(hSCM);
-                return false;
-            }
-        } else {
-            std::cerr << "[ERROR] No se pudo crear servicio. Error: " << error << std::endl;
-            CloseServiceHandle(hSCM);
-            return false;
-        }
-    }
-    
-    bool startResult = StartService(hService, 0, NULL);
-    if (!startResult) {
-        DWORD error = GetLastError();
-        if (error != ERROR_SERVICE_ALREADY_RUNNING) {
-            std::cerr << "[ERROR] No se pudo iniciar driver. Error: " << error << std::endl;
-            
-            DeleteService(hService);
-            CloseServiceHandle(hService);
-            CloseServiceHandle(hSCM);
-            return false;
-        }
-    }
-    
-    CloseServiceHandle(hService);
-    CloseServiceHandle(hSCM);
-    
-    currentDriverIndex = driverIndex;
-    currentServiceName = serviceName;
-    
-    std::cout << "[SUCCESS] Driver cargado exitosamente: " << driver.name << std::endl;
-    std::cout << "[INFO] Servicio: " << serviceName << std::endl;
-    std::cout << "[WARNING] Tier: " << driver.tier << " - " << driver.description << std::endl;
-    
-    return true;
+    return drivers[driverIndex];
 }
 
-// Descarga el driver actual
-bool InjectionEngine::UnloadDriver() {
-    if (currentDriverIndex < 0 || currentServiceName.empty()) {
-        std::cout << "[INFO] No hay driver cargado para descargar\n";
-        return true;
-    }
-    
-    std::cout << "[DRIVER_UNLOAD] Descargando driver: " << drivers[currentDriverIndex].name << std::endl;
-    
-    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-    if (!hSCM) {
-        std::cerr << "[ERROR] No se pudo abrir Service Control Manager\n";
-        return false;
-    }
-    
-    SC_HANDLE hService = OpenServiceA(hSCM, currentServiceName.c_str(), 
-                                     SERVICE_STOP | DELETE | SERVICE_QUERY_STATUS);
-    if (!hService) {
-        std::cerr << "[ERROR] No se pudo abrir servicio: " << currentServiceName << std::endl;
-        CloseServiceHandle(hSCM);
-        return false;
-    }
-    
-    SERVICE_STATUS status;
-    ControlService(hService, SERVICE_CONTROL_STOP, &status);
-    
-    do {
-        Sleep(500);
-        QueryServiceStatus(hService, &status);
-    } while (status.dwCurrentState == SERVICE_STOP_PENDING);
-    
-    bool deleteResult = DeleteService(hService);
-    
-    CloseServiceHandle(hService);
-    CloseServiceHandle(hSCM);
-    
-    if (deleteResult) {
-        std::cout << "[SUCCESS] Driver descargado exitosamente\n";
-        currentDriverIndex = -1;
-        currentServiceName.clear();
-        return true;
-    } else {
-        std::cerr << "[WARNING] Driver detenido pero no eliminado completamente\n";
-        return false;
-    }
-}
-
-// Obtiene información de un driver
-std::string InjectionEngine::GetDriverInfo(int driverIndex) {
-    if (driverIndex < 0 || driverIndex >= static_cast<int>(drivers.size())) {
-        return "Índice de driver inválido";
-    }
-    
-    const DriverInfo& driver = drivers[driverIndex];
-    std::stringstream info;
-    
-    info << "=== " << driver.name << " ===\n";
-    info << "Archivo: " << driver.filename << "\n";
-    info << "Tier: " << driver.tier << "\n";
-    info << "CVE: " << driver.cve << "\n";
-    info << "Fuente: " << driver.source << "\n";
-    info << "Descripción: " << driver.description << "\n";
-    
-    std::string driverPath = "drivers\\" + driver.filename;
-    if (std::filesystem::exists(driverPath)) {
-        auto fileSize = std::filesystem::file_size(driverPath);
-        info << "Estado: ✅ DISPONIBLE (" << fileSize << " bytes)\n";
-    } else {
-        info << "Estado: ❌ NO ENCONTRADO\n";
-    }
-    
-    return info.str();
-}
-
-// **🎯 NUEVA FUNCIÓN - Carga de Cheat Tables (.CT)**
-bool InjectionEngine::LoadCheatTable(const std::string& ctFilePath, DWORD processId) {
-    std::cout << "[CHEAT_TABLE] Cargando archivo .CT: " << ctFilePath << std::endl;
-    
-    // Verificar que el archivo .CT existe
-    if (!std::filesystem::exists(ctFilePath)) {
-        std::cerr << "[ERROR] Archivo .CT no encontrado: " << ctFilePath << std::endl;
-        return false;
-    }
-    
-    // Verificar que los ejecutables de CE existan
-    std::string ce64Path = "core_dlls\\cheatengine-x86_64.exe";
-    std::string ce32Path = "core_dlls\\cheatengine-i386.exe";
-    
-    if (!std::filesystem::exists(ce64Path) || !std::filesystem::exists(ce32Path)) {
-        std::cerr << "[ERROR] Ejecutables de Cheat Engine no encontrados!\n";
-        return false;
-    }
-    
-    // Determinar arquitectura del proceso
-    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId);
-    if (!hProcess) {
-        std::cerr << "[ERROR] No se puede acceder al proceso ID: " << processId << std::endl;
-        return false;
-    }
-    
-    BOOL isWow64 = FALSE;
-    IsWow64Process(hProcess, &isWow64);
-    bool isProcess32Bit = isWow64;
-    CloseHandle(hProcess);
-    
-    // Seleccionar ejecutable apropiado
-    std::string ceExecutable = isProcess32Bit ? ce32Path : ce64Path;
-    std::cout << "[INFO] Usando " << (isProcess32Bit ? "CE 32-bit" : "CE 64-bit") << " para cargar .CT" << std::endl;
-    
-    // Construir comando para cargar .CT en CE
-    std::stringstream cmd;
-    cmd << "\"" << ceExecutable << "\" \"" << ctFilePath << "\"";
-    
-    std::cout << "[CMD] " << cmd.str() << std::endl;
-    
-    // Ejecutar Cheat Engine con el archivo .CT
-    STARTUPINFOA si = {sizeof(si)};
-    PROCESS_INFORMATION pi = {0};
-    
-    bool success = CreateProcessA(
-        NULL,
-        const_cast<char*>(cmd.str().c_str()),
-        NULL, NULL, FALSE,
-        0,  // Mostrar ventana para que el usuario pueda interactuar
-        NULL, NULL, &si, &pi
-    );
-    
-    if (success) {
-        std::cout << "[SUCCESS] Cheat Engine iniciado con tabla: " << ctFilePath << std::endl;
-        std::cout << "[INFO] CE se abrirá con el cheat table cargado" << std::endl;
-        std::cout << "[INFO] El usuario puede activar/desactivar cheats desde la interfaz de CE" << std::endl;
-        
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        return true;
-    } else {
-        std::cerr << "[ERROR] No se pudo cargar el cheat table. Error: " << GetLastError() << std::endl;
-        return false;
-    }
+json InjectionEngine::GetSystemStatus() {
+    json status;
+    status["driverLoaded"] = IsDriverLoaded();
+    status["currentDriverName"] = GetCurrentDriverName();
+    status["serviceName"] = IsDriverLoaded() ? currentServiceName : "N/A";
+    status["cheatEnginePath"] = std::filesystem::absolute("core_dlls/cheatengine-x86_64.exe").string();
+    return status;
 }

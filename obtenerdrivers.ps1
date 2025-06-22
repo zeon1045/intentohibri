@@ -1,174 +1,207 @@
-# =============================================================================
-#  Script para Obtener Drivers Vulnerables (VersiÛn Asistente Interactivo Robusto)
-#  Maneja correctamente la extracciÛn de drivers y es m·s resistente a errores.
-# =============================================================================
+# =====================================================================================
+# BYOVD Professional Suite v3.0 - Script de Descarga de Drivers
+# Este script ayuda a obtener drivers vulnerables de fuentes LEGALES y OFICIALES
+# =====================================================================================
 
-# --- CONFIGURACI”N DE RUTA ---
-# Modifica esta lÌnea con la ruta completa a tu carpeta de drivers.
-$driversPathOverride = "C:\Users\mosta\Desktop\belbel\drivers"
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host " BYOVD Professional Suite v3.0 - Driver Setup" -ForegroundColor Cyan  
+Write-Host "================================================" -ForegroundColor Cyan
+Write-Host ""
 
+Write-Host "[INFO] Este script te guiar√° para obtener drivers vulnerables LEGALMENTE." -ForegroundColor Yellow
+Write-Host ""
 
-# --- ConfiguraciÛn de Software (Enlaces y LÛgica Actualizados) ---
-$targets = @(
+# Crear carpeta drivers si no existe
+if (-not (Test-Path "drivers")) {
+    New-Item -ItemType Directory -Path "drivers" | Out-Null
+    Write-Host "[CREATED] Carpeta 'drivers' creada." -ForegroundColor Green
+}
+
+Write-Host "=== DRIVERS DISPONIBLES Y SUS FUENTES OFICIALES ===" -ForegroundColor White
+Write-Host ""
+
+$drivers = @(
     @{
-        Name = "CPU-Z"
-        Url = "https://download.cpuid.com/cpu-z/cpu-z_2.15-en.zip"
-        DriverPattern = "cpuz*.sys"
-        DestinationFile = "cpuz_x64.sys"
-        Type = "ExeInZip" 
+        Name = "Gigabyte GDrv (Premium)"
+        File = "gdrv.sys"
+        CVE = "CVE-2018-19320"
+        Source = "Gigabyte App Center / RGB Fusion"
+        URL = "https://www.gigabyte.com/Support/Utility"
+        Risk = "BAJO - Muy compatible"
+        Color = "Green"
     },
     @{
-        Name = "HWiNFO64"
-        Url = "https://sitsa.dl.sourceforge.net/project/hwinfo/Windows_Portable/hwi_826.zip?viasf=1"
-        DriverPattern = "HWiNFO*.SYS"
-        DestinationFile = "HWiNFO64A.SYS"
-        Type = "ExeInZip"
+        Name = "MSI MSIo (Premium)"
+        File = "msio64.sys"
+        CVE = "CVE-2019-16098"
+        Source = "MSI Dragon Center / Afterburner"
+        URL = "https://www.msi.com/Landing/afterburner"
+        Risk = "BAJO - Excelente con anti-cheats"
+        Color = "Green"  
     },
     @{
-        Name = "MSI Afterburner"
-        Url = "https://us2-dl.techpowerup.com/files/MSIAfterburnerSetup465.zip"
-        DriverPattern = "RTCore64.sys"
-        DestinationFile = "RTCore64.sys"
-        Type = "Zip"
+        Name = "MSI RTCore (Standard)"
+        File = "RTCore64.sys"
+        CVE = "CVE-2019-16098"
+        Source = "MSI Afterburner"
+        URL = "https://www.msi.com/Landing/afterburner"
+        Risk = "MEDIO - Bien soportado"
+        Color = "Yellow"
     },
     @{
-        Name = "Gigabyte Control Center"
-        Url = "https://download.gigabyte.com/FileList/Utility/GCC_25.06.04.01.zip"
-        DriverPattern = "gdrv*.sys"
-        DestinationFile = "gdrv.sys"
-        Type = "Zip"
+        Name = "CPU-Z (Standard)"
+        File = "cpuz159_x64.sys"
+        CVE = "CVE-2017-15302"
+        Source = "CPU-Z Official"
+        URL = "https://www.cpuid.com/softwares/cpu-z.html"
+        Risk = "MEDIO - Ampliamente disponible"
+        Color = "Yellow"
     },
     @{
-        Name = "Process Hacker"
-        Url = "https://github.com/processhacker/processhacker/releases/download/v2.39/processhacker-2.39-setup.exe"
-        DriverPattern = "kprocesshacker.sys"
-        DestinationFile = "kprocesshacker.sys"
-        Type = "Exe"
+        Name = "HWiNFO64 (Standard)"
+        File = "HWiNFO_x64_205.sys"
+        CVE = "CVE-2018-8960"
+        Source = "HWiNFO Official"
+        URL = "https://www.hwinfo.com/download/"
+        Risk = "MEDIO - Estable"
+        Color = "Yellow"
+    },
+    @{
+        Name = "Process Hacker (High-Risk)"
+        File = "kprocesshacker.sys"
+        CVE = "CVE-2020-13833"
+        Source = "Process Hacker Official"
+        URL = "https://processhacker.sourceforge.io/"
+        Risk = "ALTO - F√°cilmente detectado"
+        Color = "Red"
     }
 )
 
-# --- Inicio del Script ---
+$index = 1
+foreach ($driver in $drivers) {
+    Write-Host "[$index] $($driver.Name)" -ForegroundColor White
+    Write-Host "    Archivo: $($driver.File)" -ForegroundColor Gray
+    Write-Host "    CVE: $($driver.CVE)" -ForegroundColor Gray
+    Write-Host "    Fuente: $($driver.Source)" -ForegroundColor Gray
+    Write-Host "    URL: $($driver.URL)" -ForegroundColor Blue
+    Write-Host "    Riesgo: $($driver.Risk)" -ForegroundColor $driver.Color
+    Write-Host ""
+    $index++
+}
 
-# Habilita el modo estricto para detectar errores de variables no inicializadas.
-Set-StrictMode -Version Latest
+Write-Host "=== INSTRUCCIONES DE OBTENCI√ìN LEGAL ===" -ForegroundColor White
+Write-Host ""
+Write-Host "1. DESCARGA OFICIAL: Descarga el software de la URL oficial proporcionada" -ForegroundColor Green
+Write-Host "2. INSTALACI√ìN: Instala el software normalmente" -ForegroundColor Green  
+Write-Host "3. EXTRACCI√ìN: El driver .sys se instalar√° en System32/drivers o en la carpeta de instalaci√≥n" -ForegroundColor Green
+Write-Host "4. COPIA: Copia el archivo .sys a la carpeta 'drivers' de este proyecto" -ForegroundColor Green
+Write-Host ""
 
-$colorInfo = "Cyan"; $colorSuccess = "Green"; $colorWarn = "Yellow"; $colorError = "Red"
-$baseDir = $PSScriptRoot
-$tempDir = Join-Path $baseDir "temp_installers"
+Write-Host "=== RUTAS COMUNES DE EXTRACCI√ìN ===" -ForegroundColor White
+Write-Host ""
+Write-Host "‚Ä¢ Gigabyte (gdrv.sys):" -ForegroundColor Cyan
+Write-Host "  C:\Windows\System32\drivers\" -ForegroundColor Gray
+Write-Host "  C:\Program Files (x86)\GIGABYTE\AppCenter\" -ForegroundColor Gray
+Write-Host ""
+Write-Host "‚Ä¢ MSI Afterburner (RTCore64.sys, msio64.sys):" -ForegroundColor Cyan
+Write-Host "  C:\Program Files (x86)\MSI Afterburner\" -ForegroundColor Gray
+Write-Host "  C:\Windows\System32\drivers\" -ForegroundColor Gray
+Write-Host ""
+Write-Host "‚Ä¢ CPU-Z (cpuz159_x64.sys):" -ForegroundColor Cyan
+Write-Host "  C:\Program Files\CPUID\CPU-Z\" -ForegroundColor Gray
+Write-Host ""
+Write-Host "‚Ä¢ HWiNFO64 (HWiNFO_x64_205.sys):" -ForegroundColor Cyan
+Write-Host "  C:\Program Files\HWiNFO64\" -ForegroundColor Gray
+Write-Host ""
 
-if (-not [string]::IsNullOrEmpty($driversPathOverride)) { $driversDir = $driversPathOverride } 
-else { $driversDir = Join-Path $baseDir "drivers" }
+Write-Host "=== SCRIPT DE B√öSQUEDA AUTOM√ÅTICA ===" -ForegroundColor White
+Write-Host ""
+$autoSearch = Read-Host "¬øDeseas buscar autom√°ticamente drivers ya instalados en tu sistema? (s/n)"
 
-if (-not (Test-Path $driversDir)) { Write-Host "Creando carpeta '$driversDir'..." -F $colorInfo; New-Item -Path $driversDir -ItemType Directory | Out-Null }
-if (-not (Test-Path $tempDir)) { New-Item -Path $tempDir -ItemType Directory | Out-Null }
-
-Write-Host "=================================================" -F $colorInfo
-Write-Host "   Asistente de ObtenciÛn de Drivers Seguros   "
-Write-Host "=================================================" -F $colorInfo; Write-Host
-
-$headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" }
-
-foreach ($target in $targets) {
-    Write-Host "--- Procesando: $($target.Name) ---" -ForegroundColor "White"
+if ($autoSearch -eq "s" -or $autoSearch -eq "S") {
+    Write-Host ""
+    Write-Host "[SCANNING] Buscando drivers en ubicaciones comunes..." -ForegroundColor Yellow
+    Write-Host ""
     
-    $driverDestPath = Join-Path $driversDir $target.DestinationFile
-    if (Test-Path $driverDestPath) {
-        Write-Host "El driver '$($target.DestinationFile)' ya existe. Omitiendo." -F $colorSuccess
-        Write-Host; continue
-    }
-
-    # LÛgica mejorada y m·s segura para obtener el nombre del archivo
-    try {
-        $uri = [System.Uri]$target.Url
-        $fileName = [System.IO.Path]::GetFileName($uri.AbsolutePath)
-    } catch {
-        $fileName = $target.Url.Split('/')[-1].Split('?')[0]
-    }
+    $foundDrivers = @()
     
-    if ([string]::IsNullOrEmpty($fileName)) {
-        Write-Host "No se pudo determinar el nombre del archivo para $($target.Name). Omitiendo." -F $colorError
-        continue
-    }
-
-    $downloadPath = Join-Path $tempDir $fileName
-
-    try {
-        Write-Host "Descargando instalador..." -F $colorInfo
-        Invoke-WebRequest -Uri $target.Url -OutFile $downloadPath -UseBasicParsing -Headers $headers -TimeoutSec 300
-        Write-Host "Descarga completa: $fileName" -F $colorSuccess
-    } catch {
-        Write-Host "La descarga autom·tica fallÛ. El enlace puede estar roto." -F $colorError
-        # ... (cÛdigo para descarga manual) ...
-        continue
-    }
-
-    try {
-        if ($target.Type -eq "Zip") {
-            Write-Host "Extrayendo archivos del ZIP..." -F $colorInfo
-            Expand-Archive -Path $downloadPath -DestinationPath $tempDir -Force
-            
-            Write-Host "Buscando patrÛn '$($target.DriverPattern)'..." -F $colorInfo
-            $foundDriver = Get-ChildItem -Path $tempDir -Recurse -Filter $target.DriverPattern | Select-Object -First 1
-            
-            if ($foundDriver) {
-                Write-Host "°Driver encontrado!: $($foundDriver.Name)" -F $colorSuccess
-                Copy-Item -Path $foundDriver.FullName -Destination $driverDestPath
-                Write-Host "'$($target.DestinationFile)' ha sido copiado a '$driversDir'." -F $colorSuccess
-            } else {
-                 Write-Host "No se pudo encontrar '$($target.DriverPattern)' autom·ticamente en el ZIP." -F $colorWarn
-            }
-
-        } elseif ($target.Type -eq "Exe" -or $target.Type -eq "ExeInZip") {
-            $exePath = $downloadPath
-            if ($target.Type -eq "ExeInZip") {
-                Write-Host "Extrayendo archivos del ZIP..." -F $colorInfo
-                Expand-Archive -Path $downloadPath -DestinationPath $tempDir -Force
-                $foundExe = Get-ChildItem -Path $tempDir -Recurse -Filter "*.exe" | Where-Object { $_.Name -like "*64.exe" -or $_.Name -like "*x64.exe" } | Select-Object -First 1
-                if ($foundExe) { $exePath = $foundExe.FullName } 
-                else { throw "No se encontrÛ el ejecutable x64 dentro del ZIP para $($target.Name)." }
-            }
-
-            Write-Host "El driver para '$($target.Name)' se carga al ejecutar el programa." -F $colorWarn
-            Write-Host "1. Por favor, ejecuta el siguiente programa:" -F $colorWarn
-            Write-Host "   $exePath"
-            Write-Host "2. MantÈn el programa abierto y vuelve a esta ventana."
-            Read-Host "Presiona Enter cuando el programa estÈ en ejecuciÛn..."
-            
-            $searchPaths = @(
-                (Join-Path $env:SystemRoot "System32\drivers"),
-                (Join-Path $env:TEMP),
-                (Join-Path ${env:ProgramFiles} "Process Hacker 2"),
-                (Join-Path ${env:ProgramFiles} "CPUID\CPU-Z"),
-                (Join-Path ${env:ProgramFiles} "HWiNFO64")
-            )
-
-            $foundSystemDriver = $false
-            while (-not $foundSystemDriver) {
-                foreach($path in $searchPaths) {
-                    $actualDriver = Get-ChildItem -Path $path -Filter $target.DriverPattern -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-                    if ($actualDriver) {
-                        Write-Host "°Driver encontrado en '$($actualDriver.FullName)'!" -F $colorSuccess
-                        Copy-Item -Path $actualDriver.FullName -Destination $driverDestPath
-                        Write-Host "'$($target.DestinationFile)' ha sido copiado a '$driversDir'." -F $colorSuccess
-                        $foundSystemDriver = $true; break
+    # Definir rutas de b√∫squeda
+    $searchPaths = @(
+        "C:\Windows\System32\drivers",
+        "C:\Program Files (x86)\MSI Afterburner",
+        "C:\Program Files (x86)\GIGABYTE",
+        "C:\Program Files\CPUID\CPU-Z",
+        "C:\Program Files\HWiNFO64",
+        "C:\Program Files (x86)\Process Hacker 2"
+    )
+    
+    foreach ($path in $searchPaths) {
+        if (Test-Path $path) {
+            foreach ($driver in $drivers) {
+                $driverPath = Join-Path $path $driver.File
+                if (Test-Path $driverPath) {
+                    $foundDrivers += @{
+                        Name = $driver.Name
+                        File = $driver.File
+                        Path = $driverPath
+                        Size = (Get-Item $driverPath).Length
                     }
-                }
-                if (-not $foundSystemDriver) {
-                    Write-Host "No se pudo encontrar '$($target.DriverPattern)' en las rutas comunes." -F $colorError
-                    $userPath = Read-Host "Por favor, pega la ruta donde se est· ejecutando '$($target.Name)' (o presiona Enter para omitir)"
-                    if ([string]::IsNullOrWhiteSpace($userPath)) { break }
-                    if (Test-Path $userPath) { $searchPaths += $userPath }
-                    else { Write-Host "Ruta no v·lida." -F $colorError }
+                    Write-Host "[FOUND] $($driver.Name): $driverPath" -ForegroundColor Green
                 }
             }
         }
-    } catch {
-        Write-Host "OcurriÛ un error al procesar el archivo para '$($target.Name)':" -F $colorError
-        Write-Host $_.Exception.Message -F $colorError
     }
-    Write-Host
+    
+    if ($foundDrivers.Count -eq 0) {
+        Write-Host "[INFO] No se encontraron drivers en ubicaciones comunes." -ForegroundColor Yellow
+        Write-Host "[INFO] Instala primero el software oficial correspondiente." -ForegroundColor Yellow
+    } else {
+        Write-Host ""
+        $copyDrivers = Read-Host "¬øDeseas copiar los drivers encontrados a la carpeta 'drivers'? (s/n)"
+        
+        if ($copyDrivers -eq "s" -or $copyDrivers -eq "S") {
+            foreach ($found in $foundDrivers) {
+                $destPath = Join-Path "drivers" $found.File
+                try {
+                    Copy-Item $found.Path $destPath -Force
+                    Write-Host "[COPIED] $($found.File) -> drivers\" -ForegroundColor Green
+                } catch {
+                    Write-Host "[ERROR] No se pudo copiar $($found.File): $($_.Exception.Message)" -ForegroundColor Red
+                }
+            }
+        }
+    }
 }
 
-Write-Host "Limpiando archivos temporales..." -F $colorInfo
-Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-Write-Host "°Proceso completado!" -ForegroundColor "White"
+Write-Host ""
+Write-Host "=== ESTADO ACTUAL ===" -ForegroundColor White
+$driverFiles = Get-ChildItem "drivers\*.sys" -ErrorAction SilentlyContinue
+if ($driverFiles) {
+    Write-Host ""
+    Write-Host "Drivers disponibles en 'drivers\':" -ForegroundColor Green
+    foreach ($file in $driverFiles) {
+        $size = [math]::Round($file.Length / 1KB, 2)
+        Write-Host " ‚úì $($file.Name) ($size KB)" -ForegroundColor Green
+    }
+} else {
+    Write-Host ""
+    Write-Host "No hay drivers .sys en la carpeta 'drivers'." -ForegroundColor Red
+    Write-Host "Necesitas obtener al menos un driver para usar el sistema BYOVD." -ForegroundColor Yellow
+}
+
+Write-Host ""
+Write-Host "=== PR√ìXIMOS PASOS ===" -ForegroundColor White
+Write-Host ""
+Write-Host "1. Obt√©n drivers de fuentes oficiales mostradas arriba" -ForegroundColor Cyan
+Write-Host "2. Ejecuta 'build.bat' para compilar el proyecto" -ForegroundColor Cyan
+Write-Host "3. Ejecuta 'build\BYOVD_Professional_v3.exe' como administrador" -ForegroundColor Cyan
+Write-Host "4. Accede a http://localhost:12345 para usar la interfaz web" -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "‚ö†Ô∏è  RECORDATORIO LEGAL:" -ForegroundColor Red
+Write-Host "‚Ä¢ Solo usa este software en sistemas que poseas completamente" -ForegroundColor Yellow
+Write-Host "‚Ä¢ Solo descarga drivers de fuentes oficiales y leg√≠timas" -ForegroundColor Yellow
+Write-Host "‚Ä¢ Este proyecto es exclusivamente para fines educativos" -ForegroundColor Yellow
+Write-Host ""
+
+Read-Host "Presiona Enter para salir"

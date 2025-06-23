@@ -44,6 +44,10 @@ private:
     DriverInfo* currentDriver;
     bool driverLoaded;
     std::string currentServiceName;
+    
+    // --- NUEVAS VARIABLES PARA ESTADO DE PRIVILEGIOS ---
+    bool hasLoadDriverPrivilege = false;
+    bool hasDebugPrivilege = false;
 
     void InitializeDriverDatabase();
     bool CleanupService(const std::string& serviceName);

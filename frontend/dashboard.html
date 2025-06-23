@@ -2,582 +2,221 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔥 Belzebub - Professional Edition</title>
+    <title>Belzebub Professional Suite</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-dark: #1e1e2e; --bg-light: #282a36; --primary: #ff79c6;
+            --secondary: #8be9fd; --success: #50fa7b; --error: #ff5555;
+            --text: #f8f8f2; --text-muted: #6272a4;
         }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: white;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .header h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            background: linear-gradient(45deg, #ff6b6b, #feca57);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .header p {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-        
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-        
-        .section {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-        
-        .section h2 {
-            margin-bottom: 20px;
-            color: #fff;
-            font-size: 1.4em;
-            border-bottom: 2px solid rgba(255,255,255,0.3);
-            padding-bottom: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #fff;
-        }
-        
-        .form-group select, .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            background: rgba(255,255,255,0.9);
-            color: #333;
-            transition: all 0.3s ease;
-        }
-        
-        .form-group select:focus, .form-group input:focus {
-            outline: none;
-            background: white;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
-        }
-        
-        .btn {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            min-width: 120px;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-        
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(45deg, #3742fa, #2f3542);
-        }
-        
-        .btn-success {
-            background: linear-gradient(45deg, #2ed573, #1e90ff);
-        }
-        
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .status-online {
-            background: #2ed573;
-            box-shadow: 0 0 10px #2ed573;
-        }
-        
-        .status-offline {
-            background: #ff3838;
-            box-shadow: 0 0 10px #ff3838;
-        }
-        
-        .message {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-        
-        .message-success {
-            background: rgba(46, 213, 115, 0.2);
-            border: 1px solid #2ed573;
-            color: #2ed573;
-        }
-        
-        .message-error {
-            background: rgba(255, 56, 56, 0.2);
-            border: 1px solid #ff3838;
-            color: #ff3838;
-        }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .info-card {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        
-        .info-card h3 {
-            margin-bottom: 10px;
-            color: #feca57;
-        }
-        
-        .info-card p {
-            font-family: monospace;
-            font-size: 1.1em;
-        }
-        
-        /* --- NUEVO CSS PARA LA VENTANA MODAL --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .modal-window {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 25px;
-            border-radius: 15px;
-            width: 80%;
-            max-width: 700px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid rgba(255,255,255,0.3);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid rgba(255,255,255,0.3);
-            padding-bottom: 15px;
-        }
-        
-        .modal-header h3 {
-            margin: 0;
-            color: #fff;
-            font-size: 1.5em;
-        }
-        
-        .modal-header .close-btn {
-            background: #ff6b6b;
-            border: none;
-            color: white;
-            padding: 8px 15px;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-        
-        .modal-header .close-btn:hover {
-            background: #ff5252;
-            transform: scale(1.1);
-        }
-        
-        .modal-body {
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-        
-        #processListModalTable {
-            width: 100%;
-            border-collapse: collapse;
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        #processListModalTable th {
-            background: rgba(255,255,255,0.2);
-            padding: 15px;
-            text-align: left;
-            font-weight: bold;
-            color: #fff;
-            border-bottom: 2px solid rgba(255,255,255,0.3);
-        }
-        
-        #processListModalTable td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            color: #fff;
-        }
-        
-        #processListModalTable tr:hover {
-            background-color: rgba(255,255,255,0.2);
-            cursor: pointer;
-        }
-        
-        .cheat-entry-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            transition: background 0.3s ease;
-        }
-        
-        .cheat-entry-item:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        
-        .cheat-toggle {
-            transform: scale(1.2);
-            margin-left: 10px;
-        }
-        
-        .status-display {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            display: inline-block;
-        }
-        
-        .status-ok {
-            background: rgba(46, 213, 115, 0.3);
-            color: #2ed573;
-            border: 1px solid #2ed573;
-        }
-        
-        .status-warn {
-            background: rgba(255, 193, 7, 0.3);
-            color: #ffc107;
-            border: 1px solid #ffc107;
-        }
-        
-        .status-error {
-            background: rgba(255, 56, 56, 0.3);
-            color: #ff3838;
-            border: 1px solid #ff3838;
-        }
-        
-        .hidden {
-            display: none;
-        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-dark); color: var(--text); margin: 0; padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { color: var(--primary); margin: 0; font-weight: 700; letter-spacing: 1px; }
+        .header p { color: var(--text-muted); }
+        .grid-container { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .main-column, .side-column { display: flex; flex-direction: column; gap: 20px; }
+        .panel { background-color: var(--bg-light); border-radius: 8px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #3b3d50; }
+        .panel h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
+        label, button { display: block; width: 100%; text-align: left; margin-bottom: 8px; font-weight: 600; color: var(--secondary); box-sizing: border-box;}
+        input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #44475a; border-radius: 5px; background-color: #40444b; color: var(--text); box-sizing: border-box; }
+        button { background-color: var(--primary); color: #282a36; padding: 12px; border: none; font-size: 1rem; cursor: pointer; transition: all 0.2s ease; text-align: center; }
+        button:hover { filter: brightness(1.2); transform: translateY(-2px); }
+        button.btn-danger { background-color: var(--error); }
+        #driverList, #cheatEntries { list-style: none; padding: 0; max-height: 150px; overflow-y: auto; background: #22242f; padding: 10px; border-radius: 5px;}
+        #driverList li, #cheatEntries li { padding: 10px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; background-color: #44475a; }
+        #driverList li { cursor: pointer; } #driverList li.selected { background-color: var(--primary); color: #282a36; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-window { background: #2c2f33; padding: 25px; border-radius: 8px; width: 80%; max-width: 700px; max-height: 80vh; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-header h3 { margin: 0; }
+        .modal-header .close-btn { background: var(--primary); border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+        #processSearchInput { width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box; background: #40444b; border: 1px solid var(--secondary); color: var(--text); border-radius: 5px; }
+        .modal-body { overflow-y: auto; }
+        #processListModalTable { width: 100%; border-collapse: collapse; }
+        #processListModalTable th, #processListModalTable td { padding: 8px; text-align: left; border-bottom: 1px solid #4f545c; }
+        #processListModalTable tr:hover { background-color: #4f545c; cursor: pointer; }
+        #systemStatusGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .status-item { background: #44475a; padding: 15px; border-radius: 6px; }
+        .status-item strong { color: var(--secondary); display: block; margin-bottom: 5px; }
+        .status-ok { color: var(--success); } .status-error { color: var(--error); } .status-warn { color: #f1fa8c; }
+        .search-stats { color: var(--text-muted); font-size: 0.9em; margin-bottom: 10px; }
+        .cheat-entry-item { display: flex; justify-content: space-between; align-items: center; }
+        .cheat-toggle { margin-left: 10px; transform: scale(1.2); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🔥 Belzebub Professional Suite</h1>
-            <p>Sistema avanzado de inyección y manipulación de memoria</p>
-        </div>
-        
-        <div id="messages"></div>
-        
-        <div class="main-grid">
-            <!-- Driver Management -->
-            <div class="section">
-                <h2><span class="status-indicator" id="driver-status"></span>Gestión de Drivers</h2>
-                <div class="form-group">
-                    <label for="driver-select">Driver Disponible:</label>
-                    <select id="driver-select">
-                        <option value="">Cargando drivers...</option>
-                    </select>
-                </div>
-                <button class="btn" id="load-driver-btn">Cargar Driver</button>
-                <button class="btn btn-secondary" id="unload-driver-btn">Descargar Driver</button>
-            </div>
-            
-            <!-- Process Selection -->
-            <div class="section">
-                <h2>🎯 Selección de Proceso</h2>
-                <div class="form-group">
-                    <label>Proceso Objetivo:</label>
-                    <div id="processSelectionArea">
-                        <span id="selectedProcessDisplay" class="status-display status-warn">Ninguno Seleccionado</span>
+    <header class="header">
+        <h1>🔥 Belzebub Professional Suite</h1>
+        <p>Sistema avanzado de inyección y manipulación de memoria</p>
+    </header>
+
+    <div class="grid-container">
+        <div class="main-column">
+            <div class="panel">
+                <h3>Control Principal</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <label>Driver Disponible</label>
+                        <ul id="driverList"><li>Cargando...</li></ul>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button id="loadDriverBtn">Cargar Driver</button>
+                            <button id="unloadDriverBtn" class="btn-danger">Descargar</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Proceso Objetivo</label>
+                        <div id="selectedProcessDisplay" style="background: #40444b; padding: 10px; border-radius: 5px; margin-bottom: 10px;" class="status-warn">Ninguno seleccionado</div>
+                        <button id="openProcessModalBtn">Seleccionar Proceso...</button>
                     </div>
                 </div>
-                <button class="btn btn-success" id="openProcessModalBtn">📋 Seleccionar Proceso...</button>
+            </div>
+
+            <div class="panel">
+                <h3>Gestión de Cheat Table (.CT)</h3>
+                <label for="ctPathInput" class="button" style="background: var(--secondary); color: #282a36; padding: 12px; text-align: center; cursor: pointer; border-radius: 5px;">Elegir Archivo .CT</label>
+                <input type="file" id="ctPathInput" accept=".ct,.xml" style="display:none;">
+                <label style="margin-top:15px;">Entradas de la Tabla:</label>
+                <ul id="cheatEntries"><li>Cargue una tabla para ver las entradas.</li></ul>
             </div>
         </div>
-        
-        <div class="main-grid">
-            <!-- Cheat Table Management -->
-            <div class="section">
-                <h2>🎮 Gestión de Cheat Table (.ct)</h2>
-                <div class="form-group">
-                    <label for="ct-path">Archivo Cheat Table:</label>
-                    <input type="file" id="ct-path" accept=".ct" style="background: rgba(255,255,255,0.9); color: #333;">
-                </div>
-                <div class="form-group">
-                    <label>Entradas de la Tabla:</label>
-                    <ul id="cheat-entries" style="max-height: 250px; overflow-y: auto; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; list-style: none;">
-                        <li style="color: #ccc; font-style: italic; text-align: center; padding: 20px;">Cargue una tabla para ver las entradas.</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- DLL Injection -->
-            <div class="section">
-                <h2>💉 Inyección de DLL</h2>
-                <div class="form-group">
-                    <label for="dll-path">Ruta de la DLL:</label>
-                    <input type="text" id="dll-path" placeholder="C:\\path\\to\\your.dll">
-                </div>
-                <button class="btn btn-success" id="inject-dll-btn">Inyectar DLL</button>
-            </div>
-        </div>
-        
-        <!-- System Status -->
-        <div class="section">
-            <h2>📊 Estado del Sistema</h2>
-            <div class="info-grid" id="system-info">
-                <div class="info-card">
-                    <h3>Estado del Motor</h3>
-                    <p id="engine-status">Inicializando...</p>
-                </div>
-                <div class="info-card">
-                    <h3>Driver Cargado</h3>
-                    <p id="driver-loaded">Ninguno</p>
-                </div>
-                <div class="info-card">
-                    <h3>Proceso Objetivo</h3>
-                    <p id="target-process">No seleccionado</p>
-                </div>
-                <div class="info-card">
-                    <h3>Privilegios Admin</h3>
-                    <p id="admin-status">Verificando...</p>
-                </div>
-                <div class="info-card">
-                    <h3>Privilegios Driver</h3>
-                    <p id="driver-privileges">Verificando...</p>
-                </div>
-                <div class="info-card">
-                    <h3>Tabla de Cheats</h3>
-                    <p id="cheat-table-status">Ninguna cargada</p>
-                </div>
+
+        <div class="side-column">
+            <div class="panel">
+                <h3>Estado del Sistema</h3>
+                <div id="systemStatusGrid"></div>
             </div>
         </div>
     </div>
     
-    <!-- Modal para Selección de Procesos -->
     <div id="processModal" class="modal-overlay">
         <div class="modal-window">
             <div class="modal-header">
-                <h3>🔍 Seleccionar Proceso Objetivo</h3>
+                <h3>Seleccionar Proceso</h3>
                 <button id="closeProcessModalBtn" class="close-btn">&times;</button>
             </div>
+            <input type="text" id="processSearchInput" placeholder="🔍 Buscar por nombre o PID...">
+            <div class="search-stats" id="searchStats">Mostrando todos los procesos</div>
             <div class="modal-body">
-                <div style="margin-bottom: 15px;">
-                    <button class="btn btn-secondary" id="refreshProcessListBtn">🔄 Actualizar Lista</button>
-                </div>
                 <table id="processListModalTable">
-                    <thead>
-                        <tr>
-                            <th>Nombre del Proceso</th>
-                            <th>PID</th>
-                            <th>Uso de CPU</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="3" style="text-align: center; padding: 20px;">Cargando procesos...</td>
-                        </tr>
-                    </tbody>
+                    <thead><tr><th>Nombre del Proceso</th><th>PID</th><th>Memoria</th></tr></thead>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // Estado global de la aplicación
+        // --- ESTADO GLOBAL DE LA APLICACIÓN ---
         const state = {
             targetPID: null,
             targetProcessName: '',
             ctPath: '',
             systemStatus: {},
-            processes: [],
             drivers: [],
-            cheatEntries: []
+            selectedDriverId: null,
+            allProcesses: []
         };
 
-        // Objeto para centralizar las llamadas a la API
+        // --- API CALLS CENTRALIZADAS ---
         const API = {
             async get(endpoint) {
                 try {
-                    const response = await fetch(`http://localhost:12345/api/${endpoint}`);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return await response.json();
+                    const res = await fetch(`http://localhost:12345/api/${endpoint}`);
+                    if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+                    return await res.json();
                 } catch (error) {
-                    log(`Error en API GET ${endpoint}: ${error}`, 'error');
+                    console.error(`Error en GET /${endpoint}:`, error);
                     return null;
                 }
             },
             async post(endpoint, body) {
                 try {
-                    const response = await fetch(`http://localhost:12345/api/${endpoint}`, {
+                    const res = await fetch(`http://localhost:12345/api/${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body)
                     });
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return await response.json();
+                    if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+                    return await res.json();
                 } catch (error) {
-                    log(`Error en API POST ${endpoint}: ${error}`, 'error');
-                    return { success: false, message: `Fallo en la comunicación con la API: ${error}` };
+                    console.error(`Error en POST /${endpoint}:`, error);
+                    return null;
                 }
             }
         };
 
-        // Función para mostrar logs en la interfaz
-        function log(message, type = 'info') {
-            const messagesDiv = document.getElementById('messages');
-            if (!messagesDiv) return;
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message message-${type === 'error' ? 'error' : 'success'}`;
-            messageDiv.innerHTML = `<span style="font-weight: bold;">[${new Date().toLocaleTimeString()}]</span> ${message}`;
-            messagesDiv.appendChild(messageDiv);
-            
-            setTimeout(() => {
-                if (messageDiv.parentNode) {
-                    messageDiv.remove();
-                }
-            }, 5000);
-        }
-
-        // --- FUNCIONES DE RENDERIZADO MEJORADAS ---
+        // --- FUNCIONES DE RENDERIZADO ---
         function renderStatus() {
             const status = state.systemStatus;
-            
-            // Actualizar indicadores de estado
-            const updateElement = (id, content) => {
-                const element = document.getElementById(id);
-                if (element) element.textContent = content;
-            };
-            
-            updateElement('engine-status', 'Operativo');
-            updateElement('driver-loaded', status.currentDriver || 'Ninguno');
-            updateElement('admin-status', status.runningAsAdmin ? '✅ Administrador' : '❌ Usuario Normal');
-            updateElement('driver-privileges', status.loadDriverPrivilege ? '✅ Habilitados' : '❌ Sin Privilegios');
-            updateElement('target-process', state.targetProcessName ? `${state.targetProcessName} (${state.targetPID})` : 'No seleccionado');
-            updateElement('cheat-table-status', state.ctPath ? state.ctPath.split('\\').pop() || 'Cargada' : 'Ninguna cargada');
-            
-            // Actualizar indicador visual del driver
-            const driverIndicator = document.getElementById('driver-status');
-            if (driverIndicator) {
-                driverIndicator.className = status.driverLoaded ? 
-                    'status-indicator status-online' : 'status-indicator status-offline';
-            }
-            
-            // Mostrar advertencia si es necesario
-            if (!status.runningAsAdmin) {
-                log('⚠️ ADVERTENCIA: Ejecutar como administrador para máxima funcionalidad', 'error');
-            }
+            const grid = document.getElementById('systemStatusGrid');
+            grid.innerHTML = `
+                <div class="status-item">
+                    <strong>Estado del Motor</strong> 
+                    <span class="status-ok">Operativo</span>
+                </div>
+                <div class="status-item">
+                    <strong>Driver Cargado</strong> 
+                    <span class="${status.driverLoaded ? 'status-ok' : 'status-warn'}">
+                        ${status.currentDriver || 'Ninguno'}
+                    </span>
+                </div>
+                <div class="status-item">
+                    <strong>Proceso Objetivo</strong> 
+                    <span class="${state.targetPID ? 'status-ok' : 'status-warn'}">
+                        ${state.targetProcessName || 'Ninguno'}
+                    </span>
+                </div>
+                <div class="status-item">
+                    <strong>Privilegios Admin</strong> 
+                    <span class="${status.runningAsAdmin ? 'status-ok' : 'status-error'}">
+                        ${status.runningAsAdmin ? 'Activo' : 'Sin permisos'}
+                    </span>
+                </div>
+                <div class="status-item">
+                    <strong>Privilegios Driver</strong> 
+                    <span class="${status.loadDriverPrivilege ? 'status-ok' : 'status-error'}">
+                        ${status.loadDriverPrivilege ? 'Activo' : 'Sin privilegios'}
+                    </span>
+                </div>
+                <div class="status-item">
+                    <strong>Tabla de Cheats</strong> 
+                    <span class="${state.ctPath ? 'status-ok' : 'status-warn'}">
+                        ${state.ctPath ? state.ctPath.split('\\').pop().split('/').pop() : 'Ninguna'}
+                    </span>
+                </div>
+            `;
         }
 
         function renderDrivers(drivers) {
-            state.drivers = drivers;
-            const select = document.getElementById('driver-select');
-            if (select) {
-                select.innerHTML = '<option value="">Seleccionar Driver...</option>';
-                drivers.forEach(d => {
-                    const option = document.createElement('option');
-                    option.value = d.id;
-                    option.textContent = `${d.filename} (x${d.architecture})`;
-                    select.appendChild(option);
-                });
+            const list = document.getElementById('driverList');
+            list.innerHTML = '';
+            if (!drivers || drivers.length === 0) {
+                list.innerHTML = '<li style="color: var(--error);">No se encontraron drivers.</li>';
+                return;
             }
-        }
-
-        function renderProcessSelection() {
-            const display = document.getElementById('selectedProcessDisplay');
-            if (state.targetPID) {
-                display.textContent = `${state.targetProcessName} (PID: ${state.targetPID})`;
-                display.className = 'status-display status-ok';
-            } else {
-                display.textContent = 'Ninguno Seleccionado';
-                display.className = 'status-display status-warn';
-            }
-            renderStatus(); // Actualizar el panel de estado general
+            drivers.forEach(d => {
+                const li = document.createElement('li');
+                li.dataset.driverId = d.id;
+                li.innerHTML = `<span>${d.filename}</span><small style="color: var(--text-muted);">x${d.architecture}</small>`;
+                li.onclick = () => {
+                    document.querySelectorAll('#driverList li').forEach(el => el.classList.remove('selected'));
+                    li.classList.add('selected');
+                    state.selectedDriverId = parseInt(d.id, 10);
+                };
+                list.appendChild(li);
+            });
         }
 
         function renderProcessModal(processes) {
             const tableBody = document.querySelector('#processListModalTable tbody');
             tableBody.innerHTML = '';
+            state.allProcesses = processes || [];
             
             if (!processes || processes.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px;">No se encontraron procesos</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--error);">No se pudieron cargar los procesos</td></tr>';
                 return;
             }
-            
+
             processes.forEach(p => {
                 const row = document.createElement('tr');
                 row.dataset.pid = p.pid;
@@ -585,229 +224,213 @@
                 row.innerHTML = `
                     <td>${p.name}</td>
                     <td>${p.pid}</td>
-                    <td>${p.cpuUsage ? p.cpuUsage.toFixed(1) + '%' : 'N/A'}</td>
+                    <td>${p.memory || 'N/A'}</td>
                 `;
                 tableBody.appendChild(row);
             });
+            updateSearchStats();
+        }
+        
+        function filterProcessList() {
+            const searchTerm = document.getElementById('processSearchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#processListModalTable tbody tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const processName = (row.dataset.name || '').toLowerCase();
+                const processPid = (row.dataset.pid || '').toString();
+                const isVisible = processName.includes(searchTerm) || processPid.includes(searchTerm);
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
+            });
+            
+            updateSearchStats(visibleCount);
+        }
+        
+        function updateSearchStats(visibleCount = null) {
+            const stats = document.getElementById('searchStats');
+            const total = state.allProcesses.length;
+            const showing = visibleCount !== null ? visibleCount : total;
+            
+            if (showing === total) {
+                stats.textContent = `Mostrando todos los ${total} procesos`;
+            } else {
+                stats.textContent = `Mostrando ${showing} de ${total} procesos`;
+            }
         }
         
         function renderCheatEntries(entries) {
-            state.cheatEntries = entries;
-            const list = document.getElementById('cheat-entries');
-            if (!list) return;
-            
+            const list = document.getElementById('cheatEntries');
             list.innerHTML = '';
             if (!entries || entries.length === 0) {
-                list.innerHTML = '<li style="color: #ccc; font-style: italic; text-align: center; padding: 20px;">Cargue una tabla para ver las entradas.</li>';
+                list.innerHTML = '<li style="color: var(--text-muted);">Cargue una tabla válida para ver las entradas.</li>';
                 return;
             }
-            
-            entries.forEach(entry => {
+            entries.forEach((entry, index) => {
                 const li = document.createElement('li');
                 li.className = 'cheat-entry-item';
                 li.innerHTML = `
-                    <span>${entry.description || `Entrada ${entry.id}`}</span>
-                    <input type="checkbox" class="cheat-toggle" data-entry-id="${entry.id}">
+                    <span>${entry.description || `Entrada ${index + 1}`}</span>
+                    <input type="checkbox" class="cheat-toggle" data-entry-id="${entry.id || index}">
                 `;
                 list.appendChild(li);
             });
         }
 
-        // --- LÓGICA DE EVENTOS MEJORADA ---
-        function setupEventListeners() {
-            // Botón para ABRIR la ventana modal de procesos
-            document.getElementById('openProcessModalBtn').onclick = async () => {
-                log('🔍 Obteniendo lista de procesos...');
-                const res = await API.get('processes');
-                if (res && res.processes) {
-                    renderProcessModal(res.processes);
-                    document.getElementById('processModal').style.display = 'flex';
-                } else {
-                    log('Error al cargar la lista de procesos', 'error');
-                }
-            };
-
-            // Botón para CERRAR la ventana modal
-            document.getElementById('closeProcessModalBtn').onclick = () => {
-                document.getElementById('processModal').style.display = 'none';
-            };
-
-            // Botón para REFRESCAR la lista de procesos en la modal
-            document.getElementById('refreshProcessListBtn').onclick = async () => {
-                log('🔄 Actualizando lista de procesos...');
-                const res = await API.get('processes');
-                if (res && res.processes) {
-                    renderProcessModal(res.processes);
-                    log('Lista actualizada correctamente', 'success');
-                } else {
-                    log('Error al actualizar la lista de procesos', 'error');
-                }
-            };
-
-            // Evento de DOBLE CLIC en la lista de procesos de la modal
-            document.querySelector('#processListModalTable tbody').ondblclick = (e) => {
-                const row = e.target.closest('tr');
-                if (!row || !row.dataset.pid) return;
-
-                state.targetPID = row.dataset.pid;
-                state.targetProcessName = row.dataset.name;
-                
-                log(`🎯 Proceso objetivo establecido: ${state.targetProcessName} (PID: ${state.targetPID})`, 'success');
-                renderProcessSelection();
-                document.getElementById('processModal').style.display = 'none';
-            };
-
-            // Evento para el botón de CARGAR DRIVER
-            document.getElementById('load-driver-btn').onclick = async () => {
-                const driverId = document.getElementById('driver-select').value;
-                if (!driverId) {
-                    log('Por favor, selecciona un driver para cargar.', 'error');
-                    return;
-                }
-                log(`🚀 Cargando driver con ID: ${driverId}...`);
-                const res = await API.post('load_driver', { id: parseInt(driverId, 10) });
-                log(res.message, res.success ? 'success' : 'error');
-                
-                if (res.success) {
-                    const newStatus = await API.get('status');
-                    if (newStatus) {
-                        state.systemStatus = newStatus;
-                        renderStatus();
-                    }
-                }
-            };
-            
-            // Evento para el botón de DESCARGAR DRIVER
-            document.getElementById('unload-driver-btn').onclick = async () => {
-                log('🔄 Descargando driver actual...');
-                const res = await API.post('unload_driver', {});
-                log(res.message, res.success ? 'success' : 'error');
-                
-                if (res.success) {
-                    const newStatus = await API.get('status');
-                    if (newStatus) {
-                        state.systemStatus = newStatus;
-                        renderStatus();
-                    }
-                }
-            };
-
-            // Evento para el INPUT de archivo .CT
-            document.getElementById('ct-path').onchange = async (event) => {
-                const fileInput = event.target;
-                if (!fileInput.files || fileInput.files.length === 0) {
-                    renderCheatEntries([]);
-                    return;
-                }
-                
-                const path = fileInput.value;
-                state.ctPath = path;
-
-                log(`📁 Leyendo tabla de cheats: ${path.split('\\').pop()}`);
-                const res = await API.post('get_ct_entries', { ctPath: path });
-                
-                if (res && res.success) {
-                    log(`✅ Se encontraron ${res.entries.length} entradas en la tabla.`, 'success');
-                    renderCheatEntries(res.entries);
-                    renderStatus();
-                } else {
-                    log(res.message || 'No se pudieron leer las entradas de la tabla.', 'error');
-                    renderCheatEntries([]);
-                }
-            };
-            
-            // Evento para los CHECKBOX de la lista de cheats
-            document.getElementById('cheat-entries').addEventListener('change', async (e) => {
-                if (e.target.classList.contains('cheat-toggle')) {
-                    if (!state.targetPID) {
-                        log('❌ Selecciona un proceso objetivo antes de activar un cheat.', 'error');
-                        e.target.checked = false;
-                        return;
-                    }
-                    
-                    if (!state.ctPath) {
-                        log('❌ Carga una tabla de cheats primero.', 'error');
-                        e.target.checked = false;
-                        return;
-                    }
-                    
-                    const entryId = e.target.dataset.entryId;
-                    const activate = e.target.checked;
-                    
-                    log(`${activate ? '🔥 Activando' : '⏹️ Desactivando'} cheat ID: ${entryId}...`);
-                    
-                    const res = await API.post('control_cheat', {
-                        ctPath: state.ctPath,
-                        pid: parseInt(state.targetPID, 10),
-                        entryId: parseInt(entryId, 10),
-                        activate: activate
-                    });
-                    
-                    log(res.message, res.success ? 'success' : 'error');
-                    
-                    if (!res.success) {
-                        e.target.checked = !activate; // Revertir el checkbox si falla
-                    }
-                }
-            });
-
-            // Evento para inyección DLL
-            document.getElementById('inject-dll-btn').onclick = async () => {
-                if (!state.targetPID) {
-                    log('❌ Selecciona un proceso objetivo antes de inyectar una DLL.', 'error');
-                    return;
-                }
-                
-                const dllPath = document.getElementById('dll-path').value;
-                if (!dllPath) {
-                    log('❌ Especifica la ruta de la DLL.', 'error');
-                    return;
-                }
-                
-                log(`💉 Inyectando DLL: ${dllPath.split('\\').pop()} en PID ${state.targetPID}...`);
-                
-                const res = await API.post('inject_dll', {
-                    pid: parseInt(state.targetPID, 10),
-                    dllPath: dllPath
-                });
-                
-                log(res.message, res.success ? 'success' : 'error');
-            };
-        }
-        
-        // Función de inicialización
-        async function initialize() {
-            log('🔥 Inicializando Belzebub Professional Suite...');
-            setupEventListeners();
-
-            // Cargar datos iniciales
-            const [status, drivers] = await Promise.all([
-                API.get('status'),
-                API.get('drivers')
-            ]);
-
-            if (status) {
-                state.systemStatus = status;
-                renderStatus();
-            }
-            if (drivers) renderDrivers(drivers);
-            
-            renderCheatEntries([]);
-            renderProcessSelection();
-            log('✅ Inicialización completa. Sistema listo para operar.');
-        }
-
-        // Iniciar la aplicación cuando la ventana se cargue
-        window.onload = initialize;
-        
-        // Actualización automática del estado cada 30 segundos
-        setInterval(async () => {
+        // --- FUNCIONES DE ESTADO ---
+        async function updateFullStatus() {
             const status = await API.get('status');
             if (status) {
                 state.systemStatus = status;
                 renderStatus();
             }
-        }, 30000);
+        }
+
+        // --- CONFIGURACIÓN DE EVENT LISTENERS ---
+        function setupEventListeners() {
+            // Modal de procesos
+            document.getElementById('openProcessModalBtn').onclick = async () => {
+                const modal = document.getElementById('processModal');
+                modal.style.display = 'flex';
+                document.getElementById('processSearchInput').focus();
+                
+                const res = await API.get('processes');
+                if (res && res.processes) {
+                    renderProcessModal(res.processes);
+                }
+            };
+
+            document.getElementById('closeProcessModalBtn').onclick = () => {
+                document.getElementById('processModal').style.display = 'none';
+            };
+
+            // Búsqueda de procesos
+            document.getElementById('processSearchInput').oninput = filterProcessList;
+
+            // Selección de proceso por doble clic
+            document.querySelector('#processListModalTable tbody').ondblclick = (e) => {
+                const row = e.target.closest('tr');
+                if (!row || !row.dataset.pid) return;
+                
+                state.targetPID = parseInt(row.dataset.pid);
+                state.targetProcessName = row.dataset.name;
+                
+                document.getElementById('selectedProcessDisplay').innerHTML = `
+                    <strong>${state.targetProcessName}</strong><br>
+                    <small>PID: ${state.targetPID}</small>
+                `;
+                document.getElementById('selectedProcessDisplay').className = 'status-ok';
+                
+                updateFullStatus();
+                document.getElementById('processModal').style.display = 'none';
+            };
+
+            // Gestión de drivers
+            document.getElementById('loadDriverBtn').onclick = async () => {
+                if (state.selectedDriverId === null) {
+                    alert('Por favor, selecciona un driver primero.');
+                    return;
+                }
+                const result = await API.post('load_driver', { id: state.selectedDriverId });
+                if (result && result.success) {
+                    await updateFullStatus();
+                } else {
+                    alert('Error al cargar el driver: ' + (result?.message || 'Error desconocido'));
+                }
+            };
+            
+            document.getElementById('unloadDriverBtn').onclick = async () => {
+                const result = await API.post('unload_driver', {});
+                if (result) {
+                    await updateFullStatus();
+                }
+            };
+
+            // Gestión de archivos .CT
+            document.getElementById('ctPathInput').onchange = async (event) => {
+                const fileInput = event.target;
+                if (!fileInput.files || fileInput.files.length === 0) return;
+                
+                const file = fileInput.files[0];
+                state.ctPath = file.name; // En web usamos el nombre del archivo
+                
+                // Para web, necesitamos leer el archivo y enviarlo como contenido
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const res = await API.post('get_ct_entries', { 
+                        ctPath: file.name,
+                        content: e.target.result
+                    });
+                    if (res && res.success) {
+                        renderCheatEntries(res.entries);
+                    } else {
+                        renderCheatEntries([]);
+                        alert('Error al cargar el archivo .CT: ' + (res?.message || 'Formato no válido'));
+                    }
+                    updateFullStatus();
+                };
+                reader.readAsText(file);
+            };
+
+            // Manejo de checkboxes de cheats
+            document.getElementById('cheatEntries').onclick = async (e) => {
+                if (e.target.classList.contains('cheat-toggle')) {
+                    const entryId = e.target.dataset.entryId;
+                    const isActive = e.target.checked;
+                    
+                    if (!state.targetPID) {
+                        alert('Por favor, selecciona un proceso objetivo primero.');
+                        e.target.checked = false;
+                        return;
+                    }
+                    
+                    const result = await API.post('control_cheat', {
+                        ctPath: state.ctPath,
+                        processId: state.targetPID,
+                        entryId: parseInt(entryId),
+                        activate: isActive
+                    });
+                    
+                    if (!result || !result.success) {
+                        alert('Error al controlar el cheat: ' + (result?.message || 'Error desconocido'));
+                        e.target.checked = !isActive; // Revertir el cambio
+                    }
+                }
+            };
+
+            // Cerrar modal con Escape
+            document.onkeydown = (e) => {
+                if (e.key === 'Escape') {
+                    document.getElementById('processModal').style.display = 'none';
+                }
+            };
+        }
+
+        // --- INICIALIZACIÓN ---
+        async function initialize() {
+            console.log('🔥 Inicializando Belzebub Professional Suite...');
+            
+            setupEventListeners();
+            await updateFullStatus();
+            
+            const drivers = await API.get('drivers');
+            if (drivers) {
+                state.drivers = drivers;
+                renderDrivers(drivers);
+            }
+            
+            // Actualización periódica del estado
+            setInterval(updateFullStatus, 30000); // Cada 30 segundos
+            
+            console.log('✅ Belzebub inicializado correctamente.');
+        }
+
+        // Iniciar cuando la página esté lista
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
     </script>
 </body>
 </html>

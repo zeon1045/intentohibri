@@ -17,7 +17,7 @@
 #pragma comment(lib, "psapi.lib")
 
 // Constructor
-InjectionEngine::InjectionEngine() : currentDriver(nullptr), driverLoaded(false) {
+InjectionEngine::InjectionEngine() : currentDriver(nullptr), driverLoaded(false), hasLoadDriverPrivilege(false), hasDebugPrivilege(false) {
     // La inicialización ahora escanea la carpeta de drivers
     InitializeDriverDatabase(); 
     
@@ -171,10 +171,10 @@ json InjectionEngine::LoadDriver(int driverIndex) {
 
     std::cout << "[LOAD] Driver seleccionado: " << currentDriver->name << " (" << currentDriver->filename << ")" << std::endl;
 
-    // --- VERIFICACIÓN DE PRIVILEGIOS ---
-    if (!IsUserAdmin()) {
-        std::cerr << "[LOAD] Error: Se requieren privilegios de administrador." << std::endl;
-        return {{"success", false}, {"message", "Se requieren permisos de administrador para cargar drivers. Ejecuta el programa como administrador."}};
+    // --- VERIFICACIÓN DE PRIVILEGIOS PERSISTENTES ---
+    if (!this->hasLoadDriverPrivilege) {
+        std::cerr << "[LOAD] Error: Privilegios SeLoadDriverPrivilege no disponibles." << std::endl;
+        return {{"success", false}, {"message", "Error: El privilegio SeLoadDriverPrivilege no está activo. Refresca el estado del sistema o reinicia como administrador."}};
     }
 
     // --- MEJORA: LIMPIEZA ROBUSTA ANTES DE CARGAR ---
@@ -189,20 +189,12 @@ json InjectionEngine::LoadDriver(int driverIndex) {
     currentServiceName = "BEL_" + baseServiceName.substr(0, 8) + "_" + GenerateRandomString(6);
     std::cout << "[CLEAN] Usando nombre de servicio único: " << currentServiceName << std::endl;
 
-    std::cout << "[PRIV] Solicitando privilegios para cargar drivers..." << std::endl;
-    BOOL privilegeResult = SetLoadDriverPrivilege(TRUE);
-    if (!privilegeResult) {
-        std::cout << "[PRIV] ⚠️  SeLoadDriverPrivilege no disponible directamente." << std::endl;
-        std::cout << "[PRIV] 🔧 Continuando con métodos alternativos..." << std::endl;
-    } else {
-        std::cout << "[PRIV] ✅ Privilegios obtenidos correctamente." << std::endl;
-    }
+    std::cout << "[PRIV] ✅ Usando privilegios previamente obtenidos y activos." << std::endl;
     
     std::filesystem::path driverPath = std::filesystem::path(get_executable_directory()) / "drivers" / currentDriver->filename;
     std::cout << "[LOAD] Ruta absoluta y segura del driver: " << driverPath.string() << std::endl;
     
     if (!std::filesystem::exists(driverPath)) {
-        SetLoadDriverPrivilege(FALSE);
         return {{"success", false}, {"message", "El archivo del driver '" + driverPath.string() + "' no se encuentra."}};
     }
 
@@ -211,7 +203,6 @@ json InjectionEngine::LoadDriver(int driverIndex) {
     if (!scManager) {
         DWORD lastError = GetLastError();
         std::cerr << "[SCM] Error: No se pudo abrir el SCM. Codigo: " << lastError << std::endl;
-        SetLoadDriverPrivilege(FALSE);
         
         std::string errorMsg = "No se pudo conectar al Service Control Manager.\nError: " + std::to_string(lastError);
         if (lastError == ERROR_ACCESS_DENIED) {
@@ -232,7 +223,6 @@ json InjectionEngine::LoadDriver(int driverIndex) {
         DWORD lastError = GetLastError();
         std::cerr << "[SCM] Error al crear el servicio del driver. Codigo: " << lastError << std::endl;
         CloseServiceHandle(scManager);
-        SetLoadDriverPrivilege(FALSE);
         
         std::string errorMsg = "Error al crear el servicio del driver.\nCódigo: " + std::to_string(lastError);
         if (lastError == ERROR_ACCESS_DENIED) {
@@ -252,7 +242,6 @@ json InjectionEngine::LoadDriver(int driverIndex) {
         DeleteService(service);
         CloseServiceHandle(service);
         CloseServiceHandle(scManager);
-        SetLoadDriverPrivilege(FALSE);
         
         std::string errorMsg = "No se pudo iniciar el servicio del driver.\nCódigo: " + std::to_string(lastError);
         if (lastError == ERROR_INVALID_IMAGE_HASH) {
@@ -300,12 +289,16 @@ json InjectionEngine::UnloadDriver() {
         CloseServiceHandle(service);
     }
 
-    SetLoadDriverPrivilege(FALSE);
     CloseServiceHandle(scManager);
     
+    // Actualizar estado interno
     driverLoaded = false;
     currentDriver = nullptr;
     currentServiceName.clear();
+    
+    // Al descargar, podemos revocar el privilegio si queremos ser limpios
+    SetLoadDriverPrivilege(FALSE);
+    this->hasLoadDriverPrivilege = false;
     
     return {{"success", true}, {"message", "Driver descargado correctamente."}};
 }
@@ -337,25 +330,20 @@ json InjectionEngine::GetSystemStatus() {
     json status;
     status["runningAsAdmin"] = IsUserAdmin() ? 1 : 0;
     
-    // Solo verificar privilegios sin cambiar el estado actual
-    bool loadPrivAvailable = false;
-    bool debugPrivAvailable = false;
-    
-    // Verificar temporalmente los privilegios sin afectar el estado
+    // --- LÓGICA DE PRIVILEGIOS CENTRALIZADA Y PERSISTENTE ---
+    // Intentamos obtener los privilegios UNA SOLA VEZ y guardamos el estado.
+    // NO los desactivamos después de comprobar para mantenerlos activos.
     if (IsUserAdmin()) {
-        loadPrivAvailable = SetLoadDriverPrivilege(TRUE);
-        if (loadPrivAvailable) {
-            SetLoadDriverPrivilege(FALSE); // Restaurar estado anterior
-        }
-        debugPrivAvailable = SetPrivilege(L"SeDebugPrivilege", TRUE);
-        if (debugPrivAvailable) {
-            SetPrivilege(L"SeDebugPrivilege", FALSE); // Restaurar estado anterior
-        }
+        this->hasLoadDriverPrivilege = SetLoadDriverPrivilege(TRUE);
+        this->hasDebugPrivilege = SetPrivilege(L"SeDebugPrivilege", TRUE);
+    } else {
+        this->hasLoadDriverPrivilege = false;
+        this->hasDebugPrivilege = false;
     }
     
-    status["loadDriverPrivilege"] = loadPrivAvailable ? 1 : 0;
-    status["debugPrivilege"] = debugPrivAvailable ? 1 : 0;
-    status["driverLoaded"] = IsDriverLoaded(); // Usa la variable de estado consistente
+    status["loadDriverPrivilege"] = this->hasLoadDriverPrivilege ? 1 : 0;
+    status["debugPrivilege"] = this->hasDebugPrivilege ? 1 : 0;
+    status["driverLoaded"] = IsDriverLoaded();
     status["driverCount"] = GetDriverCount();
     status["currentDriver"] = GetCurrentDriverName();
     status["serviceName"] = IsDriverLoaded() ? currentServiceName : "N/A";

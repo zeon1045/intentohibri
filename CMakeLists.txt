@@ -19,6 +19,7 @@ set(SOURCES
     backend/driver_manager.cpp
     backend/ct_parser.cpp
     backend/privilege_manager.cpp
+    backend/utils.cpp
 )
 
 # Crear ejecutable

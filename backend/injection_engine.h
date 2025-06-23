@@ -11,6 +11,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 #include <windows.h>
 #include "../libs/json.hpp" // Integración de la librería JSON
 
@@ -24,7 +25,8 @@ struct DriverInfo {
     std::string cve;
     std::string source;
     std::string description;
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(DriverInfo, name, filename, tier, cve, source, description);
+    int architecture = 0; // 32 o 64. 0 si es desconocido.
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(DriverInfo, name, filename, tier, cve, source, description, architecture);
 };
 
 // Estructura para la lista de procesos avanzada
@@ -38,11 +40,13 @@ struct ProcessInfo {
 // Declaración de la clase InjectionEngine
 class InjectionEngine {
 private:
-    std::vector<DriverInfo> drivers;
-    int currentDriverIndex;
+    std::map<int, DriverInfo> knownDrivers;
+    DriverInfo* currentDriver;
+    bool driverLoaded;
     std::string currentServiceName;
 
     void InitializeDriverDatabase();
+    bool CleanupService(const std::string& serviceName);
     std::string GenerateRandomString(int length);
     bool ExecuteLuaScript(const std::string& scriptContent, DWORD processId);
 

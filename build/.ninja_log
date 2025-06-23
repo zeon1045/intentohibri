@@ -1,8 +1,0 @@
-# ninja log v6
-13	304	7723884106317668	CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj	e120fcd7b023248c
-16	662	7723884106352733	CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj	4589be61aad7fb22
-10	687	7723884106292473	CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj	d79611858fb5d89
-5	2845	7723884106236434	CMakeFiles/Belzebub.dir/backend/server.cpp.obj	d64b1c80fc1189aa
-7	3866	7723884106267431	CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj	e16a5a5e8936c255
-5	2497	7723884614053654	CMakeFiles/Belzebub.dir/backend/main.cpp.obj	e3a4607835480e04
-2498	2721	7723884638975090	Belzebub.exe	2d7d988fabb74d9f

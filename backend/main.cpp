@@ -158,9 +158,27 @@ int main() {
     });
     svr.Post("/api/load_driver", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
         add_cors_headers(res);
-        auto body = json::parse(req.body);
-        int driverId = body["id"];
-        res.set_content(engine.LoadDriver(driverId).dump(), "application/json; charset=utf-8");
+        
+        // --- VALIDACIÓN ROBUSTA DEL JSON ---
+        if (req.body.empty()) {
+            res.status = 400;
+            res.set_content("{\"success\": false, \"message\": \"El cuerpo de la solicitud esta vacio.\"}", "application/json; charset=utf-8");
+            return;
+        }
+        
+        try {
+            auto body = json::parse(req.body);
+            if (!body.contains("id")) {
+                res.status = 400;
+                res.set_content("{\"success\": false, \"message\": \"Falta el campo 'id' en el JSON.\"}", "application/json; charset=utf-8");
+                return;
+            }
+            int driverId = body["id"];
+            res.set_content(engine.LoadDriver(driverId).dump(), "application/json; charset=utf-8");
+        } catch (const json::exception& e) {
+            res.status = 400;
+            res.set_content("{\"success\": false, \"message\": \"Error de JSON: " + std::string(e.what()) + "\"}", "application/json; charset=utf-8");
+        }
     });
     svr.Post("/api/unload_driver", [&add_cors_headers, &engine](const httplib::Request&, httplib::Response& res) {
         add_cors_headers(res);

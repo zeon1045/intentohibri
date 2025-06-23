@@ -15,6 +15,14 @@
 
 #pragma comment(lib, "psapi.lib")
 
+// --- FUNCIÓN DE AYUDA PARA RUTAS SEGURAS ---
+// Obtiene el directorio donde se encuentra el ejecutable actual.
+std::string get_executable_directory() {
+    char path_buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, path_buffer, MAX_PATH);
+    return std::filesystem::path(path_buffer).parent_path().string();
+}
+
 // --- NUEVA FUNCIÓN PRIVADA ---
 // Busca y elimina servicios existentes que usen la misma ruta de driver.
 void CleanupExistingDriverServices(const std::string& driverPath) {
@@ -129,112 +137,126 @@ json InjectionEngine::ListAvailableDrivers() {
 // Las funciones de verificación de privilegios están ahora en privilege_manager.h/cpp
 
 json InjectionEngine::LoadDriver(int driverIndex) {
-    std::cout << "[DEBUG] LoadDriver iniciado con driverIndex: " << driverIndex << std::endl;
+    std::cout << "\n[LOAD] --- Iniciando Proceso de Carga de Driver ---" << std::endl;
     
     if (IsDriverLoaded()) {
-        std::cout << "[DEBUG] Ya hay un driver cargado" << std::endl;
+        std::cerr << "[LOAD] Error: Ya hay un driver cargado." << std::endl;
         return {{"success", false}, {"message", "Ya hay un driver cargado. Descárgalo primero."}};
     }
-    std::cout << "[DEBUG] Verificando índice de driver. Size: " << drivers.size() << std::endl;
-    
+
     if (driverIndex < 0 || driverIndex >= static_cast<int>(drivers.size())) {
-        std::cout << "[DEBUG] Índice inválido: " << driverIndex << std::endl;
-        return {{"success", false}, {"message", "Índice de driver inválido."}};
+        std::cerr << "[LOAD] Error: Índice de driver no válido: " << driverIndex << std::endl;
+        return {{"success", false}, {"message", "Índice de driver no válido."}};
     }
 
-    std::cout << "[DEBUG] Verificando permisos de administrador..." << std::endl;
-    // Verificar permisos de administrador
+    const auto& driver = drivers[driverIndex];
+    std::cout << "[LOAD] Driver seleccionado: " << driver.name << " (" << driver.filename << ")" << std::endl;
+
+    // --- VERIFICACIÓN DE PRIVILEGIOS ---
     if (!IsUserAdmin()) {
-        std::cout << "[DEBUG] No es administrador" << std::endl;
+        std::cerr << "[LOAD] Error: Se requieren privilegios de administrador." << std::endl;
         return {{"success", false}, {"message", "Se requieren permisos de administrador para cargar drivers. Ejecuta el programa como administrador."}};
     }
-    std::cout << "[DEBUG] Permisos de administrador verificados" << std::endl;
 
-    // --- HABILITAR PRIVILEGIOS PARA CARGAR DRIVERS ---
     std::cout << "[PRIV] Solicitando privilegios para cargar drivers..." << std::endl;
     BOOL privilegeResult = SetLoadDriverPrivilege(TRUE);
     if (!privilegeResult) {
         std::cout << "[PRIV] ⚠️  SeLoadDriverPrivilege no disponible directamente." << std::endl;
         std::cout << "[PRIV] 🔧 Continuando con métodos alternativos..." << std::endl;
-        // No fallamos aquí - continuamos con el proceso de carga
     } else {
         std::cout << "[PRIV] ✅ Privilegios obtenidos correctamente." << std::endl;
     }
 
-    std::cout << "[DEBUG] Accediendo al driver en índice: " << driverIndex << std::endl;
-    const auto& driver = drivers[driverIndex];
-    std::cout << "[DEBUG] Driver obtenido: " << driver.name << " (" << driver.filename << ")" << std::endl;
-    
-    std::string driver_relative_path = "drivers\\" + driver.filename;
-    std::cout << "[DEBUG] Ruta relativa: " << driver_relative_path << std::endl;
+    // --- CORRECCIÓN CRÍTICA: CONSTRUCCIÓN DE RUTA SEGURA ---
+    std::filesystem::path driverPath = std::filesystem::path(get_executable_directory()) / "drivers" / driver.filename;
+    std::cout << "[LOAD] Ruta absoluta y segura del driver: " << driverPath.string() << std::endl;
 
-    if (!std::filesystem::exists(driver_relative_path)) {
-        std::cout << "[DEBUG] Archivo no encontrado: " << driver_relative_path << std::endl;
-        return {{"success", false}, {"message", "Archivo del driver no encontrado en la carpeta 'drivers': " + driver.filename}};
-    }
-    std::cout << "[DEBUG] Archivo encontrado correctamente" << std::endl;
-
-    char absolutePath[MAX_PATH];
-    if (GetFullPathNameA(driver_relative_path.c_str(), MAX_PATH, absolutePath, NULL) == 0) {
-         return {{"success", false}, {"message", "No se pudo obtener la ruta absoluta para: " + driver_relative_path}};
+    if (!std::filesystem::exists(driverPath)) {
+        std::cerr << "[LOAD] Error: El archivo del driver no existe en la ruta especificada." << std::endl;
+        SetLoadDriverPrivilege(FALSE);
+        return {{"success", false}, {"message", "El archivo del driver '" + driverPath.string() + "' no se encuentra."}};
     }
 
-    // --- MEJORA: LIMPIAR SERVICIOS HUÉRFANOS ANTES DE CARGAR ---
-    // CleanupExistingDriverServices(absolutePath); // TEMPORALMENTE DESHABILITADO PARA DEBUG
-
-    std::string quotedPath = "\"" + std::string(absolutePath) + "\"";
-
-    // === ABRIR SERVICE CONTROL MANAGER CON PERMISOS COMPLETOS ===
-    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-    if (!hSCM) {
+    std::cout << "[SCM] Abriendo el Service Control Manager..." << std::endl;
+    SC_HANDLE scManager = OpenSCManagerA(nullptr, nullptr, SC_MANAGER_ALL_ACCESS);
+    if (!scManager) {
         DWORD lastError = GetLastError();
-        std::cout << "[SCM] ❌ Error al abrir SCM: " << lastError << std::endl;
+        std::cerr << "[SCM] Error: No se pudo abrir el SCM. Codigo: " << lastError << std::endl;
+        SetLoadDriverPrivilege(FALSE);
         
-        std::string errorMsg = "No se pudo abrir el Service Control Manager.\n";
-        errorMsg += "Error: " + std::to_string(lastError) + "\n";
-        
+        std::string errorMsg = "No se pudo conectar al Service Control Manager.\nError: " + std::to_string(lastError);
         if (lastError == ERROR_ACCESS_DENIED) {
-            errorMsg += "💡 SOLUCIÓN: Ejecutar como 'Administrador' (clic derecho → Ejecutar como administrador)";
-        } else {
-            errorMsg += "🔧 Error del sistema. Verificar configuración de Windows.";
+            errorMsg += "\n💡 SOLUCIÓN: Ejecutar como 'Administrador' (clic derecho → Ejecutar como administrador)";
         }
-        
         return {{"success", false}, {"message", errorMsg}};
     }
-    
-    std::cout << "[SCM] ✅ Service Control Manager abierto con permisos completos" << std::endl;
+    std::cout << "[SCM] SCM abierto exitosamente." << std::endl;
 
     currentServiceName = GenerateRandomString(12);
-    SC_HANDLE hService = CreateServiceA(hSCM, currentServiceName.c_str(), currentServiceName.c_str(), SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, quotedPath.c_str(), NULL, NULL, NULL, NULL, NULL);
+    std::cout << "[SCM] Creando el servicio '" << currentServiceName << "'..." << std::endl;
     
-    if (!hService) {
-        if (GetLastError() == ERROR_SERVICE_EXISTS) {
-            hService = OpenServiceA(hSCM, currentServiceName.c_str(), SERVICE_ALL_ACCESS);
-        }
-        if (!hService) {
-            CloseServiceHandle(hSCM);
-            return {{"success", false}, {"message", "No se pudo crear/abrir el servicio del driver: " + std::to_string(GetLastError())}};
+    SC_HANDLE service = CreateServiceA(
+        scManager,
+        currentServiceName.c_str(),
+        currentServiceName.c_str(),
+        SERVICE_ALL_ACCESS,
+        SERVICE_KERNEL_DRIVER,
+        SERVICE_DEMAND_START,
+        SERVICE_ERROR_NORMAL,
+        driverPath.string().c_str(), // Pasamos la ruta segura y absoluta (SIN COMILLAS)
+        nullptr, nullptr, nullptr, nullptr, nullptr
+    );
+
+    if (!service) {
+        DWORD lastError = GetLastError();
+        if (lastError == ERROR_SERVICE_EXISTS) {
+            std::cout << "[SCM] El servicio ya existe. Intentando abrirlo..." << std::endl;
+            service = OpenServiceA(scManager, currentServiceName.c_str(), SERVICE_START);
+            if (!service) {
+                std::cerr << "[SCM] Error: No se pudo abrir el servicio existente. Codigo: " << GetLastError() << std::endl;
+                CloseServiceHandle(scManager);
+                SetLoadDriverPrivilege(FALSE);
+                return {{"success", false}, {"message", "No se pudo abrir el servicio existente."}};
+            }
+        } else {
+            std::cerr << "[SCM] Error: No se pudo crear el servicio. Codigo: " << lastError << std::endl;
+            CloseServiceHandle(scManager);
+            SetLoadDriverPrivilege(FALSE);
+            return {{"success", false}, {"message", "Error al crear el servicio del driver. Codigo: " + std::to_string(lastError)}};
         }
     }
+    std::cout << "[SCM] Servicio creado/abierto exitosamente." << std::endl;
 
-    if (!StartService(hService, 0, NULL)) {
+    std::cout << "[SCM] Iniciando el servicio..." << std::endl;
+    if (!StartService(service, 0, nullptr)) {
         DWORD lastError = GetLastError();
         if (lastError != ERROR_SERVICE_ALREADY_RUNNING) {
-            std::string error_msg = "No se pudo iniciar el servicio del driver. Código: " + std::to_string(lastError);
-            if(lastError == 2) { 
-                error_msg += " (El sistema no pudo encontrar el archivo del driver. Asegúrate de que está en 'build\\drivers\\' y que la ruta es correcta)";
+            std::cerr << "[SCM] Error: No se pudo iniciar el servicio. Codigo: " << lastError << std::endl;
+            
+            std::string errorMsg = "No se pudo iniciar el servicio del driver.\nCodigo: " + std::to_string(lastError);
+            if (lastError == ERROR_INVALID_NAME || lastError == 123) {
+                errorMsg += "\nEsto generalmente indica un problema con la ruta del driver o el archivo esta corrupto.";
+            } else if (lastError == ERROR_FILE_NOT_FOUND || lastError == 2) {
+                errorMsg += "\nEl sistema no pudo encontrar el archivo del driver en la ruta especificada.";
+            } else if (lastError == ERROR_ACCESS_DENIED || lastError == 5) {
+                errorMsg += "\nAcceso denegado. Verifica que el programa se ejecute como administrador.";
             }
-            DeleteService(hService);
-            CloseServiceHandle(hService);
-            CloseServiceHandle(hSCM);
-            return {{"success", false}, {"message", error_msg}};
+            
+            DeleteService(service); // Intentar limpiar
+            CloseServiceHandle(service);
+            CloseServiceHandle(scManager);
+            SetLoadDriverPrivilege(FALSE);
+            return {{"success", false}, {"message", errorMsg}};
         }
+        std::cout << "[SCM] El servicio ya se estaba ejecutando." << std::endl;
     }
 
-    CloseServiceHandle(hService);
-    CloseServiceHandle(hSCM);
     currentDriverIndex = driverIndex;
-    return {{"success", true}, {"message", "Driver '" + driver.name + "' cargado como '" + currentServiceName + "'."}};
+    std::cout << "[LOAD] --- Proceso de Carga de Driver FINALIZADO con ÉXITO ---" << std::endl;
+    CloseServiceHandle(service);
+    CloseServiceHandle(scManager);
+
+    return {{"success", true}, {"message", "Driver '" + driver.name + "' cargado correctamente como servicio '" + currentServiceName + "'."}};
 }
 
 // ... (El resto de las funciones de injection_engine.cpp permanecen igual que en la versión anterior) ...

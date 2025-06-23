@@ -171,7 +171,7 @@ BOOL IsUserAdmin() {
     PSID administratorsGroup = NULL;
     SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
 
-    // Crear un SID para el grupo de Administradores locales
+    // Método 1: Verificar mediante CheckTokenMembership
     if (AllocateAndInitializeSid(
         &ntAuthority,
         2,
@@ -180,14 +180,40 @@ BOOL IsUserAdmin() {
         0, 0, 0, 0, 0, 0,
         &administratorsGroup)) {
         
-        // Verificar si el token del proceso actual es miembro del grupo de Administradores
-        if (!CheckTokenMembership(NULL, administratorsGroup, &isAdmin)) {
-            isAdmin = FALSE;
+        if (CheckTokenMembership(NULL, administratorsGroup, &isAdmin)) {
+            FreeSid(administratorsGroup);
+            if (isAdmin) {
+                return TRUE;
+            }
+        } else {
+            FreeSid(administratorsGroup);
         }
-        FreeSid(administratorsGroup);
     }
 
-    return isAdmin;
+    // Método 2: Verificar elevación del token (más robusto)
+    HANDLE hToken = NULL;
+    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
+        TOKEN_ELEVATION elevation;
+        DWORD size;
+        
+        if (GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &size)) {
+            isAdmin = elevation.TokenIsElevated;
+            if (isAdmin) {
+                CloseHandle(hToken);
+                return TRUE;
+            }
+        }
+        CloseHandle(hToken);
+    }
+
+    // Método 3: Verificar acceso al SCM (el que funciona en la consola)
+    SC_HANDLE scm = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+    if (scm != NULL) {
+        CloseServiceHandle(scm);
+        return TRUE;  // Si podemos abrir SCM, somos admin
+    }
+
+    return FALSE;
 }
 
 BOOL SetLoadDriverPrivilege(BOOL enable) {

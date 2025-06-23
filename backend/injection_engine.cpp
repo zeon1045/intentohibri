@@ -18,8 +18,12 @@
 // --- NUEVA FUNCIÓN PRIVADA ---
 // Busca y elimina servicios existentes que usen la misma ruta de driver.
 void CleanupExistingDriverServices(const std::string& driverPath) {
-    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ENUMERATE_SERVICE | SC_MANAGER_CONNECT);
-    if (!hSCM) return;
+    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (!hSCM) {
+        std::cout << "[CLEANUP] ⚠️ No se pudo abrir SCM para limpieza (permisos insuficientes)" << std::endl;
+        return;
+    }
+    std::cout << "[CLEANUP] 🔍 Buscando servicios huérfanos para: " << driverPath << std::endl;
 
     ENUM_SERVICE_STATUS_PROCESS* services = nullptr;
     DWORD bytesNeeded = 0, servicesReturned = 0, resumeHandle = 0;
@@ -165,31 +169,25 @@ json InjectionEngine::LoadDriver(int driverIndex) {
 
     std::string quotedPath = "\"" + std::string(absolutePath) + "\"";
 
-    // Intentar diferentes niveles de permisos para el SCM
+    // === ABRIR SERVICE CONTROL MANAGER CON PERMISOS COMPLETOS ===
     SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (!hSCM) {
-        // Si falla con ALL_ACCESS, intentar con permisos más específicos
-        hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE | SC_MANAGER_CONNECT);
-        if (!hSCM) {
-            DWORD lastError = GetLastError();
-            std::string errorMsg = "Error al abrir SCM: " + std::to_string(lastError);
-            switch (lastError) {
-                case ERROR_ACCESS_DENIED:
-                    errorMsg += " (Acceso denegado - Verifica que el programa se ejecute como administrador)";
-                    break;
-                case ERROR_INVALID_PARAMETER:
-                    errorMsg += " (Parámetros inválidos)";
-                    break;
-                case ERROR_DATABASE_DOES_NOT_EXIST:
-                    errorMsg += " (Base de datos del SCM no existe)";
-                    break;
-                default:
-                    errorMsg += " (Error desconocido del sistema)";
-                    break;
-            }
-            return {{"success", false}, {"message", errorMsg}};
+        DWORD lastError = GetLastError();
+        std::cout << "[SCM] ❌ Error al abrir SCM: " << lastError << std::endl;
+        
+        std::string errorMsg = "No se pudo abrir el Service Control Manager.\n";
+        errorMsg += "Error: " + std::to_string(lastError) + "\n";
+        
+        if (lastError == ERROR_ACCESS_DENIED) {
+            errorMsg += "💡 SOLUCIÓN: Ejecutar como 'Administrador' (clic derecho → Ejecutar como administrador)";
+        } else {
+            errorMsg += "🔧 Error del sistema. Verificar configuración de Windows.";
         }
+        
+        return {{"success", false}, {"message", errorMsg}};
     }
+    
+    std::cout << "[SCM] ✅ Service Control Manager abierto con permisos completos" << std::endl;
 
     currentServiceName = GenerateRandomString(12);
     SC_HANDLE hService = CreateServiceA(hSCM, currentServiceName.c_str(), currentServiceName.c_str(), SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, quotedPath.c_str(), NULL, NULL, NULL, NULL, NULL);

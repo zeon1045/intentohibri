@@ -47,27 +47,27 @@ cmake_force:
 SHELL = cmd.exe
 
 # The CMake executable.
-CMAKE_COMMAND = "C:\Program Files\CMake\bin\cmake.exe"
+CMAKE_COMMAND = C:\msys64\mingw64\bin\cmake.exe
 
 # The command to remove a file.
-RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
+RM = C:\msys64\mingw64\bin\cmake.exe -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Users\mosta\Desktop\belbel
+CMAKE_SOURCE_DIR = C:\Users\mosta\Desktop\belzebub_complete_project
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Users\mosta\Desktop\belbel\build
+CMAKE_BINARY_DIR = C:\Users\mosta\Desktop\belzebub_complete_project\build
 
 #=============================================================================
 # Targets provided globally by CMake.
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running CMake cache editor..."
-	"C:\Program Files\CMake\bin\cmake-gui.exe" -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "No interactive CMake dialog available..."
+	C:\msys64\mingw64\bin\cmake.exe -E echo "No interactive CMake dialog available."
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -77,7 +77,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running CMake to regenerate build system..."
-	"C:\Program Files\CMake\bin\cmake.exe" --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	C:\msys64\mingw64\bin\cmake.exe --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -86,9 +86,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\belbel\build\CMakeFiles C:\Users\mosta\Desktop\belbel\build\\CMakeFiles\progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\belzebub_complete_project\build\CMakeFiles C:\Users\mosta\Desktop\belzebub_complete_project\build\\CMakeFiles\progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\belbel\build\CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\belzebub_complete_project\build\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -116,65 +116,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named Belzebub
+# Target rules for targets named belzebub
 
 # Build rule for target.
-Belzebub: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 Belzebub
-.PHONY : Belzebub
+belzebub: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 belzebub
+.PHONY : belzebub
 
 # fast build rule for target.
-Belzebub/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/build
-.PHONY : Belzebub/fast
+belzebub/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/build
+.PHONY : belzebub/fast
 
-backend/injection_engine.obj: backend/injection_engine.cpp.obj
-.PHONY : backend/injection_engine.obj
-
-# target to build an object file
-backend/injection_engine.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj
-.PHONY : backend/injection_engine.cpp.obj
-
-backend/injection_engine.i: backend/injection_engine.cpp.i
-.PHONY : backend/injection_engine.i
-
-# target to preprocess a source file
-backend/injection_engine.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.i
-.PHONY : backend/injection_engine.cpp.i
-
-backend/injection_engine.s: backend/injection_engine.cpp.s
-.PHONY : backend/injection_engine.s
-
-# target to generate assembly for a file
-backend/injection_engine.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.s
-.PHONY : backend/injection_engine.cpp.s
-
-backend/main.obj: backend/main.cpp.obj
-.PHONY : backend/main.obj
+backend/server.obj: backend/server.cpp.obj
+.PHONY : backend/server.obj
 
 # target to build an object file
-backend/main.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.obj
-.PHONY : backend/main.cpp.obj
+backend/server.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/backend/server.cpp.obj
+.PHONY : backend/server.cpp.obj
 
-backend/main.i: backend/main.cpp.i
-.PHONY : backend/main.i
+backend/server.i: backend/server.cpp.i
+.PHONY : backend/server.i
 
 # target to preprocess a source file
-backend/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.i
-.PHONY : backend/main.cpp.i
+backend/server.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/backend/server.cpp.i
+.PHONY : backend/server.cpp.i
 
-backend/main.s: backend/main.cpp.s
-.PHONY : backend/main.s
+backend/server.s: backend/server.cpp.s
+.PHONY : backend/server.s
 
 # target to generate assembly for a file
-backend/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.s
-.PHONY : backend/main.cpp.s
+backend/server.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/backend/server.cpp.s
+.PHONY : backend/server.cpp.s
 
 # Help Target
 help:
@@ -184,13 +160,10 @@ help:
 	@echo ... depend
 	@echo ... edit_cache
 	@echo ... rebuild_cache
-	@echo ... Belzebub
-	@echo ... backend/injection_engine.obj
-	@echo ... backend/injection_engine.i
-	@echo ... backend/injection_engine.s
-	@echo ... backend/main.obj
-	@echo ... backend/main.i
-	@echo ... backend/main.s
+	@echo ... belzebub
+	@echo ... backend/server.obj
+	@echo ... backend/server.i
+	@echo ... backend/server.s
 .PHONY : help
 
 

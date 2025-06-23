@@ -8,8 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "C:/Users/mosta/Desktop/belbel/backend/injection_engine.cpp" "CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj.d"
-  "C:/Users/mosta/Desktop/belbel/backend/main.cpp" "CMakeFiles/Belzebub.dir/backend/main.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/main.cpp.obj.d"
+  "C:/Users/mosta/Desktop/belzebub_complete_project/backend/server.cpp" "CMakeFiles/belzebub.dir/backend/server.cpp.obj" "gcc" "CMakeFiles/belzebub.dir/backend/server.cpp.obj.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

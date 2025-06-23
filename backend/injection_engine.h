@@ -14,6 +14,7 @@
 #include <map>
 #include <windows.h>
 #include "../libs/json.hpp" // Integración de la librería JSON
+#include "ct_loader.h"       // <-- INTEGRAMOS CT_LOADER
 
 using json = nlohmann::json;
 
@@ -37,16 +38,11 @@ struct ProcessInfo {
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(ProcessInfo, pid, name, cpuUsage);
 };
 
-// Estructura para entradas de Cheat Table
-struct CheatEntry {
-    int id = 0;
-    std::string description;
-    std::string type;
-    std::string address;
-    std::string value;
-    bool enabled = false;
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(CheatEntry, id, description, type, address, value, enabled);
-};
+// Usamos las estructuras de CTLoader en lugar de las nuestras
+using CTLoader::MemoryEntry;
+using CTLoader::CheatTable;
+using CTLoader::CTParser;
+using CTLoader::CTError;
 
 // Declaración de la clase InjectionEngine
 class InjectionEngine {
@@ -56,21 +52,17 @@ private:
     bool driverLoaded;
     std::string currentServiceName;
     
-    // --- NUEVAS VARIABLES PARA ESTADO DE PRIVILEGIOS ---
+    // --- VARIABLES PARA ESTADO DE PRIVILEGIOS ---
     bool hasLoadDriverPrivilege = false;
     bool hasDebugPrivilege = false;
+
+    // --- CACHE DE CHEAT TABLES USANDO CT_LOADER ---
+    std::map<std::string, CTLoader::CheatTable> cheatTableCache;
 
     void InitializeDriverDatabase();
     bool CleanupService(const std::string& serviceName);
     std::string GenerateRandomString(int length);
     bool ExecuteLuaScript(const std::string& scriptContent, DWORD processId);
-    
-    // --- FUNCIONES PARA CHEAT TABLES ---
-    std::vector<CheatEntry> ParseCheatTable(const std::string& filePath);
-    std::string ExtractBetween(const std::string& source, const std::string& start_delim, const std::string& end_delim);
-    
-    // --- CACHE DE CHEAT TABLES ---
-    std::map<std::string, std::vector<CheatEntry>> cheatTableCache;
 
 public:
     InjectionEngine();
@@ -86,17 +78,17 @@ public:
     json FindProcess(const std::string& processName); // Se mantiene por simplicidad
     json GetProcessList(); // NUEVA FUNCIÓN AVANZADA
     
-    // --- FUNCIONALIDAD CHEAT ENGINE ---
+    // --- FUNCIONALIDAD CHEAT ENGINE CON CT_LOADER ---
     json InjectDLL(DWORD processId, const std::string& dllPath);
     json SetSpeedhack(DWORD processId, float speed);
     
-    // --- CONTROL DE CHEAT TABLE (.CT) ---
+    // --- CONTROL DE CHEAT TABLE (.CT) USANDO CT_LOADER ---
     json LoadCheatTable(const std::string& ctFilePath, DWORD processId);
     json GetCheatTableEntries(const std::string& ctFilePath);
     json ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate);
     json SetCheatEntryValue(const std::string& ctFilePath, DWORD processId, int entryId, const std::string& value);
 
-    // --- NUEVO: EDITOR DE SCRIPTS ---
+    // --- EDITOR DE SCRIPTS ---
     json GetCheatScript(const std::string& ctFilePath, int entryId);
     json UpdateCheatScript(const std::string& ctFilePath, int entryId, const std::string& newScript);
 

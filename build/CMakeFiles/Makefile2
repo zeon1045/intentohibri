@@ -84,12 +84,12 @@ clean: CMakeFiles/Belzebub.dir/clean
 CMakeFiles/Belzebub.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5 "Built target Belzebub"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Built target Belzebub"
 .PHONY : CMakeFiles/Belzebub.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Belzebub.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles 5
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/Belzebub.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles 0
 .PHONY : CMakeFiles/Belzebub.dir/rule
@@ -101,7 +101,7 @@ Belzebub: CMakeFiles/Belzebub.dir/rule
 # codegen rule for target.
 CMakeFiles/Belzebub.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5 "Finished codegen for target Belzebub"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Finished codegen for target Belzebub"
 .PHONY : CMakeFiles/Belzebub.dir/codegen
 
 # clean rule for target.

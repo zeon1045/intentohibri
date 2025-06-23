@@ -2,6 +2,8 @@ file(REMOVE_RECURSE
   "Belzebub.exe"
   "Belzebub.exe.manifest"
   "Belzebub.pdb"
+  "CMakeFiles/Belzebub.dir/backend/ct_loader.cpp.obj"
+  "CMakeFiles/Belzebub.dir/backend/ct_loader.cpp.obj.d"
   "CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj"
   "CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj.d"
   "CMakeFiles/Belzebub.dir/backend/main.cpp.obj"

@@ -128,6 +128,30 @@ Belzebub/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/build
 .PHONY : Belzebub/fast
 
+backend/ct_loader.obj: backend/ct_loader.cpp.obj
+.PHONY : backend/ct_loader.obj
+
+# target to build an object file
+backend/ct_loader.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_loader.cpp.obj
+.PHONY : backend/ct_loader.cpp.obj
+
+backend/ct_loader.i: backend/ct_loader.cpp.i
+.PHONY : backend/ct_loader.i
+
+# target to preprocess a source file
+backend/ct_loader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_loader.cpp.i
+.PHONY : backend/ct_loader.cpp.i
+
+backend/ct_loader.s: backend/ct_loader.cpp.s
+.PHONY : backend/ct_loader.s
+
+# target to generate assembly for a file
+backend/ct_loader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_loader.cpp.s
+.PHONY : backend/ct_loader.cpp.s
+
 backend/injection_engine.obj: backend/injection_engine.cpp.obj
 .PHONY : backend/injection_engine.obj
 
@@ -233,6 +257,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... Belzebub
+	@echo ... backend/ct_loader.obj
+	@echo ... backend/ct_loader.i
+	@echo ... backend/ct_loader.s
 	@echo ... backend/injection_engine.obj
 	@echo ... backend/injection_engine.i
 	@echo ... backend/injection_engine.s

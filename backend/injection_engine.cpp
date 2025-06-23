@@ -432,120 +432,97 @@ json InjectionEngine::SetSpeedhack(DWORD processId, float speed) {
     return {{"success", false}, {"message", "Funcionalidad de speedhack no implementada"}};
 }
 
-// --- FUNCIÓN DE AYUDA PARA EL PARSER ---
-std::string InjectionEngine::ExtractBetween(const std::string& source, const std::string& start_delim, const std::string& end_delim) {
-    size_t start = source.find(start_delim);
-    if (start == std::string::npos) return "";
-    start += start_delim.length();
-
-    size_t end = source.find(end_delim, start);
-    if (end == std::string::npos) return "";
-
-    return source.substr(start, end - start);
-}
-
-// --- PARSER ROBUSTO DE CHEAT TABLES ---
-std::vector<CheatEntry> InjectionEngine::ParseCheatTable(const std::string& filePath) {
-    std::vector<CheatEntry> entries;
-    std::ifstream file(filePath);
-    if (!file.is_open()) {
-        std::cerr << "[CT] Error: No se pudo abrir el archivo .CT en la ruta: " << filePath << std::endl;
-        return entries;
-    }
-
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    
-    size_t current_pos = 0;
-    while (true) {
-        // Busca el inicio de la siguiente entrada
-        size_t entry_start = content.find("<CheatEntry>", current_pos);
-        if (entry_start == std::string::npos) {
-            break; // No hay más entradas
-        }
-        
-        // Busca el final de la entrada actual
-        size_t entry_end = content.find("</CheatEntry>", entry_start);
-        if (entry_end == std::string::npos) {
-            break; // Entrada malformada
-        }
-        
-        // Crea un substring que contiene solo la entrada actual
-        std::string entry_block = content.substr(entry_start, entry_end - entry_start);
-        
-        CheatEntry new_entry;
-        
-        // Extrae cada campo usando la función de ayuda
-        std::string id_str = ExtractBetween(entry_block, "<ID>", "</ID>");
-        if (!id_str.empty()) {
-            try {
-                new_entry.id = std::stoi(id_str);
-            } catch (...) {
-                new_entry.id = entries.size() + 1; // ID de respaldo
-            }
-        } else {
-            new_entry.id = entries.size() + 1; // ID de respaldo
-        }
-
-        // La descripción a menudo tiene comillas, así que las quitamos
-        std::string desc_raw = ExtractBetween(entry_block, "<Description>", "</Description>");
-        if (desc_raw.length() > 2 && desc_raw.front() == '"' && desc_raw.back() == '"') {
-            new_entry.description = desc_raw.substr(1, desc_raw.length() - 2);
-        } else {
-            new_entry.description = desc_raw;
-        }
-
-        new_entry.type = ExtractBetween(entry_block, "<VariableType>", "</VariableType>");
-        new_entry.address = ExtractBetween(entry_block, "<Address>", "</Address>");
-        new_entry.value = ExtractBetween(entry_block, "<Value>", "</Value>");
-
-        // Solo añade la entrada si tiene datos válidos
-        if (new_entry.id != 0 && !new_entry.description.empty()) {
-            entries.push_back(new_entry);
-        }
-        
-        // Mueve la posición de búsqueda al final de la entrada procesada
-        current_pos = entry_end;
-    }
-
-    std::cout << "[CT] Parseo finalizado. Se encontraron " << entries.size() << " entradas válidas." << std::endl;
-    return entries;
-}
+// Las funciones de parseo ahora son manejadas por ct_loader
 
 json InjectionEngine::LoadCheatTable(const std::string& ctFilePath, DWORD processId) {
     if (!std::filesystem::exists(ctFilePath)) {
         return {{"success", false}, {"message", "El archivo .CT no se encuentra en la ruta especificada."}};
     }
     
-    // Parsear el archivo
-    std::vector<CheatEntry> entries = ParseCheatTable(ctFilePath);
-    if (entries.empty()) {
-        return {{"success", false}, {"message", "No se pudieron extraer entradas válidas del archivo .CT."}};
+    std::cout << "[CT] Iniciando carga de tabla: " << ctFilePath << std::endl;
+    
+    // Usar ct_loader para cargar la tabla
+    CTLoader::CTParser parser;
+    
+    if (!parser.loadFromFile(ctFilePath)) {
+        return {{"success", false}, {"message", "Error al leer el archivo .CT."}};
+    }
+    
+    if (!parser.parseXML()) {
+        return {{"success", false}, {"message", "Error al parsear el archivo .CT: Formato no válido."}};
+    }
+    
+    // Obtener la tabla parseada
+    CTLoader::CheatTable table = parser.getTable();
+    
+    if (table.entries.empty()) {
+        return {{"success", false}, {"message", "No se encontraron entradas válidas en el archivo .CT."}};
     }
     
     // Guardar en caché
-    cheatTableCache[ctFilePath] = entries;
+    cheatTableCache[ctFilePath] = table;
     
-    std::cout << "[CT] Tabla de cheats cargada exitosamente: " << entries.size() << " entradas." << std::endl;
-    return {{"success", true}, {"message", "Tabla de cheats cargada correctamente."}, {"entries", entries.size()}};
+    std::cout << "[CT] Tabla de cheats cargada exitosamente: " << table.entries.size() << " entradas." << std::endl;
+    std::cout << "[CT] Título: " << table.title << std::endl;
+    std::cout << "[CT] Juego: " << table.game_name << std::endl;
+    
+    return {
+        {"success", true}, 
+        {"message", "Tabla de cheats cargada correctamente."}, 
+        {"entries", table.entries.size()},
+        {"title", table.title},
+        {"game", table.game_name}
+    };
 }
 
 json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
-    // Si no está en caché, intentar cargar
-    if (cheatTableCache.find(ctFilePath) == cheatTableCache.end()) {
-        if (!std::filesystem::exists(ctFilePath)) {
-            return {{"success", false}, {"message", "Archivo .CT no encontrado."}};
-        }
-        
-        std::vector<CheatEntry> entries = ParseCheatTable(ctFilePath);
-        if (entries.empty()) {
-            return {{"success", false}, {"message", "No se pudieron extraer entradas del archivo .CT."}};
-        }
-        
-        cheatTableCache[ctFilePath] = entries;
+    if (ctFilePath.empty() || !std::filesystem::exists(ctFilePath)) {
+        std::cerr << "[CT] Error: La ruta del archivo .CT es inválida o no existe: " << ctFilePath << std::endl;
+        return {{"success", false}, {"message", "Ruta de archivo .CT no válida."}};
     }
     
-    auto& entries = cheatTableCache[ctFilePath];
-    return {{"success", true}, {"entries", entries}};
+    // Si no está en caché, cargar usando ct_loader
+    if (cheatTableCache.find(ctFilePath) == cheatTableCache.end()) {
+        std::cout << "[CT] Cargando tabla desde archivo: " << ctFilePath << std::endl;
+        
+        // 1. Instanciar el parser de ct_loader
+        CTLoader::CTParser parser;
+        
+        // 2. Cargar el archivo
+        if (!parser.loadFromFile(ctFilePath)) {
+            std::cerr << "[CT] Error: No se pudo cargar el archivo." << std::endl;
+            return {{"success", false}, {"message", "Error al cargar el archivo .CT."}};
+        }
+        
+        // 3. Parsear el XML
+        if (!parser.parseXML()) {
+            std::cerr << "[CT] Error: Formato XML no válido o corrupto." << std::endl;
+            return {{"success", false}, {"message", "Error al parsear la tabla: Formato no compatible o archivo corrupto."}};
+        }
+        
+        // 4. Obtener la tabla parseada y guardar en caché
+        cheatTableCache[ctFilePath] = parser.getTable();
+        std::cout << "[CT] Tabla cargada exitosamente en caché." << std::endl;
+    }
+    
+    // 5. Convertir las entradas a formato JSON para el frontend
+    auto& table = cheatTableCache[ctFilePath];
+    json j_entries = json::array();
+    
+    int entryId = 1;
+    for (const auto& entry : table.entries) {
+        j_entries.push_back({
+            {"id", entryId++},
+            {"description", entry.description},
+            {"type", entry.type},
+            {"address", entry.address},
+            {"value", entry.value},
+            {"enabled", entry.enabled}
+        });
+    }
+    
+    std::cout << "[CT] Parseo con ct_loader exitoso. " << table.entries.size() << " entradas encontradas." << std::endl;
+    return {{"success", true}, {"entries", j_entries}};
 }
 
 json InjectionEngine::ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate) {
@@ -553,26 +530,24 @@ json InjectionEngine::ControlCheatEntry(const std::string& ctFilePath, DWORD pro
         return {{"success", false}, {"message", "La tabla de cheats no está cargada. Cárgala primero."}};
     }
 
-    auto& entries = cheatTableCache[ctFilePath];
-    CheatEntry* targetEntry = nullptr;
-    for (auto& entry : entries) {
-        if (entry.id == entryId) {
-            targetEntry = &entry;
-            break;
-        }
+    auto& table = cheatTableCache[ctFilePath];
+    
+    // Buscar la entrada por ID (índice basado en 1)
+    if (entryId < 1 || entryId > static_cast<int>(table.entries.size())) {
+        return {{"success", false}, {"message", "ID de entrada " + std::to_string(entryId) + " fuera de rango."}};
     }
     
-    if (!targetEntry) {
-        return {{"success", false}, {"message", "Entrada con ID " + std::to_string(entryId) + " no encontrada."}};
-    }
+    // Acceder a la entrada (convertir a índice basado en 0)
+    CTLoader::MemoryEntry& targetEntry = table.entries[entryId - 1];
     
     // Actualizar estado
-    targetEntry->enabled = activate;
+    targetEntry.enabled = activate;
     
-    // Aquí iría la lógica de escritura en memoria real
+    // Aquí iría la lógica de escritura en memoria real usando CTExecutor
     // Por ahora, solo simulamos la activación
     std::cout << "[CT] " << (activate ? "Activando" : "Desactivando") 
-              << " cheat: " << targetEntry->description << std::endl;
+              << " cheat: " << targetEntry.description << std::endl;
+    std::cout << "[CT] Dirección: " << targetEntry.address << " | Tipo: " << targetEntry.type << " | Valor: " << targetEntry.value << std::endl;
     
     return {{"success", true}, {"message", "Cheat " + std::string(activate ? "activado" : "desactivado") + " correctamente."}};
 }
@@ -582,16 +557,23 @@ json InjectionEngine::SetCheatEntryValue(const std::string& ctFilePath, DWORD pr
         return {{"success", false}, {"message", "La tabla de cheats no está cargada."}};
     }
 
-    auto& entries = cheatTableCache[ctFilePath];
-    for (auto& entry : entries) {
-        if (entry.id == entryId) {
-            entry.value = value;
-            std::cout << "[CT] Valor actualizado para cheat: " << entry.description << " = " << value << std::endl;
-            return {{"success", true}, {"message", "Valor actualizado correctamente."}};
-        }
+    auto& table = cheatTableCache[ctFilePath];
+    
+    // Verificar rango del ID
+    if (entryId < 1 || entryId > static_cast<int>(table.entries.size())) {
+        return {{"success", false}, {"message", "ID de entrada " + std::to_string(entryId) + " fuera de rango."}};
     }
     
-    return {{"success", false}, {"message", "Entrada no encontrada."}};
+    // Acceder a la entrada (convertir a índice basado en 0)
+    CTLoader::MemoryEntry& targetEntry = table.entries[entryId - 1];
+    
+    // Actualizar valor
+    targetEntry.value = value;
+    
+    std::cout << "[CT] Valor actualizado para cheat: " << targetEntry.description << " = " << value << std::endl;
+    std::cout << "[CT] Dirección: " << targetEntry.address << " | Tipo: " << targetEntry.type << std::endl;
+    
+    return {{"success", true}, {"message", "Valor actualizado correctamente."}};
 }
 
 json InjectionEngine::GetCheatScript(const std::string& ctFilePath, int entryId) {

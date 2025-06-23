@@ -56,10 +56,10 @@ RM = C:\msys64\mingw64\bin\cmake.exe -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Users\mosta\Desktop\belzebub_complete_project
+CMAKE_SOURCE_DIR = C:\Users\mosta\Desktop\intentogibrido
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Users\mosta\Desktop\belzebub_complete_project\build
+CMAKE_BINARY_DIR = C:\Users\mosta\Desktop\intentogibrido\build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -86,9 +86,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\belzebub_complete_project\build\CMakeFiles C:\Users\mosta\Desktop\belzebub_complete_project\build\\CMakeFiles\progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles C:\Users\mosta\Desktop\intentogibrido\build\\CMakeFiles\progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\belzebub_complete_project\build\CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -116,24 +116,120 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named belzebub
+# Target rules for targets named Belzebub
 
 # Build rule for target.
-belzebub: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 belzebub
-.PHONY : belzebub
+Belzebub: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 Belzebub
+.PHONY : Belzebub
 
 # fast build rule for target.
-belzebub/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/build
-.PHONY : belzebub/fast
+Belzebub/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/build
+.PHONY : Belzebub/fast
+
+backend/ct_parser.obj: backend/ct_parser.cpp.obj
+.PHONY : backend/ct_parser.obj
+
+# target to build an object file
+backend/ct_parser.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj
+.PHONY : backend/ct_parser.cpp.obj
+
+backend/ct_parser.i: backend/ct_parser.cpp.i
+.PHONY : backend/ct_parser.i
+
+# target to preprocess a source file
+backend/ct_parser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.i
+.PHONY : backend/ct_parser.cpp.i
+
+backend/ct_parser.s: backend/ct_parser.cpp.s
+.PHONY : backend/ct_parser.s
+
+# target to generate assembly for a file
+backend/ct_parser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.s
+.PHONY : backend/ct_parser.cpp.s
+
+backend/driver_manager.obj: backend/driver_manager.cpp.obj
+.PHONY : backend/driver_manager.obj
+
+# target to build an object file
+backend/driver_manager.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj
+.PHONY : backend/driver_manager.cpp.obj
+
+backend/driver_manager.i: backend/driver_manager.cpp.i
+.PHONY : backend/driver_manager.i
+
+# target to preprocess a source file
+backend/driver_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.i
+.PHONY : backend/driver_manager.cpp.i
+
+backend/driver_manager.s: backend/driver_manager.cpp.s
+.PHONY : backend/driver_manager.s
+
+# target to generate assembly for a file
+backend/driver_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.s
+.PHONY : backend/driver_manager.cpp.s
+
+backend/injection_engine.obj: backend/injection_engine.cpp.obj
+.PHONY : backend/injection_engine.obj
+
+# target to build an object file
+backend/injection_engine.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj
+.PHONY : backend/injection_engine.cpp.obj
+
+backend/injection_engine.i: backend/injection_engine.cpp.i
+.PHONY : backend/injection_engine.i
+
+# target to preprocess a source file
+backend/injection_engine.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.i
+.PHONY : backend/injection_engine.cpp.i
+
+backend/injection_engine.s: backend/injection_engine.cpp.s
+.PHONY : backend/injection_engine.s
+
+# target to generate assembly for a file
+backend/injection_engine.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.s
+.PHONY : backend/injection_engine.cpp.s
+
+backend/main.obj: backend/main.cpp.obj
+.PHONY : backend/main.obj
+
+# target to build an object file
+backend/main.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.obj
+.PHONY : backend/main.cpp.obj
+
+backend/main.i: backend/main.cpp.i
+.PHONY : backend/main.i
+
+# target to preprocess a source file
+backend/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.i
+.PHONY : backend/main.cpp.i
+
+backend/main.s: backend/main.cpp.s
+.PHONY : backend/main.s
+
+# target to generate assembly for a file
+backend/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.s
+.PHONY : backend/main.cpp.s
 
 backend/server.obj: backend/server.cpp.obj
 .PHONY : backend/server.obj
 
 # target to build an object file
 backend/server.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/backend/server.cpp.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/server.cpp.obj
 .PHONY : backend/server.cpp.obj
 
 backend/server.i: backend/server.cpp.i
@@ -141,7 +237,7 @@ backend/server.i: backend/server.cpp.i
 
 # target to preprocess a source file
 backend/server.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/backend/server.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/server.cpp.i
 .PHONY : backend/server.cpp.i
 
 backend/server.s: backend/server.cpp.s
@@ -149,7 +245,7 @@ backend/server.s: backend/server.cpp.s
 
 # target to generate assembly for a file
 backend/server.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/backend/server.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/server.cpp.s
 .PHONY : backend/server.cpp.s
 
 # Help Target
@@ -160,7 +256,19 @@ help:
 	@echo ... depend
 	@echo ... edit_cache
 	@echo ... rebuild_cache
-	@echo ... belzebub
+	@echo ... Belzebub
+	@echo ... backend/ct_parser.obj
+	@echo ... backend/ct_parser.i
+	@echo ... backend/ct_parser.s
+	@echo ... backend/driver_manager.obj
+	@echo ... backend/driver_manager.i
+	@echo ... backend/driver_manager.s
+	@echo ... backend/injection_engine.obj
+	@echo ... backend/injection_engine.i
+	@echo ... backend/injection_engine.s
+	@echo ... backend/main.obj
+	@echo ... backend/main.i
+	@echo ... backend/main.s
 	@echo ... backend/server.obj
 	@echo ... backend/server.i
 	@echo ... backend/server.s

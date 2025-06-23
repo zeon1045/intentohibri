@@ -20,6 +20,9 @@
 #include <algorithm>
 #include <commdlg.h> // Para el diálogo de archivos
 
+// Declaración de función del injection_engine
+extern bool IsRunningAsAdmin();
+
 #define SERVER_PORT 12345
 
 std::string get_executable_dir() {
@@ -53,6 +56,34 @@ std::string open_file_dialog(const char* filter) {
 }
 
 
+// Función para reiniciar como administrador
+bool RestartAsAdmin() {
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(NULL, exePath, MAX_PATH);
+    
+    std::cout << "[ADMIN] Reiniciando como administrador..." << std::endl;
+    
+    SHELLEXECUTEINFOA sei = {0};
+    sei.cbSize = sizeof(sei);
+    sei.lpVerb = "runas";  // Solicitar elevación
+    sei.lpFile = exePath;
+    sei.lpDirectory = NULL;
+    sei.nShow = SW_NORMAL;
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+    
+    if (ShellExecuteExA(&sei)) {
+        std::cout << "[ADMIN] Proceso elevado iniciado. Cerrando instancia actual..." << std::endl;
+        return true;
+    } else {
+        DWORD error = GetLastError();
+        std::cout << "[ADMIN] Error al elevar privilegios: " << error << std::endl;
+        if (error == ERROR_CANCELLED) {
+            std::cout << "[ADMIN] El usuario canceló la elevación de privilegios" << std::endl;
+        }
+        return false;
+    }
+}
+
 int main() {
     SetConsoleOutputCP(CP_UTF8);
     setvbuf(stdout, nullptr, _IOFBF, 1000);
@@ -65,6 +96,15 @@ int main() {
     std::cout << "=================================================" << std::endl;
     std::cout << "          🔥 Belzebub - Professional Suite 🔥" << std::endl;
     std::cout << "=================================================" << std::endl;
+    
+    // Verificar privilegios de administrador al inicio
+    if (!IsRunningAsAdmin()) {
+        std::cout << "[ADMIN] ⚠️  No se detectaron privilegios de administrador." << std::endl;
+        std::cout << "[ADMIN] 🔧 Continuando sin privilegios de administrador (funcionalidad limitada)..." << std::endl;
+        std::cout << "[ADMIN] 💡 Para funcionalidad completa, ejecutar como administrador manualmente." << std::endl;
+    } else {
+        std::cout << "[ADMIN] ✅ Ejecutándose con privilegios de administrador" << std::endl;
+    }
 
     std::string exe_dir = get_executable_dir();
     SetCurrentDirectoryA(exe_dir.c_str());

@@ -4,7 +4,7 @@
 # compile CXX with C:/msys64/mingw64/bin/c++.exe
 CXX_DEFINES = 
 
-CXX_INCLUDES = @CMakeFiles/belzebub.dir/includes_CXX.rsp
+CXX_INCLUDES = @CMakeFiles/Belzebub.dir/includes_CXX.rsp
 
 CXX_FLAGS = -std=gnu++17
 

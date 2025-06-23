@@ -53,20 +53,20 @@ RM = C:\msys64\mingw64\bin\cmake.exe -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Users\mosta\Desktop\belzebub_complete_project
+CMAKE_SOURCE_DIR = C:\Users\mosta\Desktop\intentogibrido
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Users\mosta\Desktop\belzebub_complete_project\build
+CMAKE_BINARY_DIR = C:\Users\mosta\Desktop\intentogibrido\build
 
 #=============================================================================
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/belzebub.dir/all
+all: CMakeFiles/Belzebub.dir/all
 .PHONY : all
 
 # The main recursive "codegen" target.
-codegen: CMakeFiles/belzebub.dir/codegen
+codegen: CMakeFiles/Belzebub.dir/codegen
 .PHONY : codegen
 
 # The main recursive "preinstall" target.
@@ -74,40 +74,40 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/belzebub.dir/clean
+clean: CMakeFiles/Belzebub.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/belzebub.dir
+# Target rules for target CMakeFiles/Belzebub.dir
 
 # All Build rule for target.
-CMakeFiles/belzebub.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\belzebub_complete_project\build\CMakeFiles --progress-num=1,2 "Built target belzebub"
-.PHONY : CMakeFiles/belzebub.dir/all
+CMakeFiles/Belzebub.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Built target Belzebub"
+.PHONY : CMakeFiles/Belzebub.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/belzebub.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\belzebub_complete_project\build\CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/belzebub.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\belzebub_complete_project\build\CMakeFiles 0
-.PHONY : CMakeFiles/belzebub.dir/rule
+CMakeFiles/Belzebub.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles 6
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/Belzebub.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles 0
+.PHONY : CMakeFiles/Belzebub.dir/rule
 
 # Convenience name for target.
-belzebub: CMakeFiles/belzebub.dir/rule
-.PHONY : belzebub
+Belzebub: CMakeFiles/Belzebub.dir/rule
+.PHONY : Belzebub
 
 # codegen rule for target.
-CMakeFiles/belzebub.dir/codegen:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\belzebub_complete_project\build\CMakeFiles --progress-num=1,2 "Finished codegen for target belzebub"
-.PHONY : CMakeFiles/belzebub.dir/codegen
+CMakeFiles/Belzebub.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Finished codegen for target Belzebub"
+.PHONY : CMakeFiles/Belzebub.dir/codegen
 
 # clean rule for target.
-CMakeFiles/belzebub.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\belzebub.dir\build.make CMakeFiles/belzebub.dir/clean
-.PHONY : CMakeFiles/belzebub.dir/clean
+CMakeFiles/Belzebub.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/clean
+.PHONY : CMakeFiles/Belzebub.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

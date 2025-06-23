@@ -1,8 +1,7 @@
 #include "injection_engine.h"
 #include <windows.h>
 #include <tlhelp32.h>
-#include <Pdh.h>
-#include <PdhMsg.h>
+#include <psapi.h>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -13,7 +12,7 @@
 #include <map>
 #include <vector>
 
-#pragma comment(lib, "pdh.lib")
+#pragma comment(lib, "psapi.lib")
 
 // --- NUEVA FUNCIÓN PRIVADA ---
 // Busca y elimina servicios existentes que usen la misma ruta de driver.
@@ -110,12 +109,131 @@ json InjectionEngine::ListAvailableDrivers() {
     return result;
 }
 
+// Función para verificar y habilitar privilegios necesarios
+bool EnablePrivilege(LPCSTR privilegeName) {
+    HANDLE hToken;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
+        DWORD error = GetLastError();
+        std::cout << "[PRIVILEGE] Error abriendo token: " << error << std::endl;
+        return false;
+    }
+
+    LUID luid;
+    if (!LookupPrivilegeValueA(NULL, privilegeName, &luid)) {
+        DWORD error = GetLastError();
+        std::cout << "[PRIVILEGE] Error obteniendo LUID para " << privilegeName << ": " << error << std::endl;
+        CloseHandle(hToken);
+        return false;
+    }
+
+    TOKEN_PRIVILEGES tp;
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+    if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL)) {
+        DWORD error = GetLastError();
+        std::cout << "[PRIVILEGE] Error ajustando privilegios para " << privilegeName << ": " << error << std::endl;
+        CloseHandle(hToken);
+        return false;
+    }
+    
+    DWORD lastError = GetLastError();
+    CloseHandle(hToken);
+    
+    if (lastError == ERROR_SUCCESS) {
+        std::cout << "[PRIVILEGE] Privilegio " << privilegeName << " habilitado exitosamente" << std::endl;
+        return true;
+    } else if (lastError == ERROR_NOT_ALL_ASSIGNED) {
+        std::cout << "[PRIVILEGE] Privilegio " << privilegeName << " no pudo ser asignado (probablemente no disponible)" << std::endl;
+        return false;
+    } else {
+        std::cout << "[PRIVILEGE] Error desconocido habilitando " << privilegeName << ": " << lastError << std::endl;
+        return false;
+    }
+}
+
+// Función para verificar si se ejecuta como administrador
+bool IsRunningAsAdmin() {
+    BOOL isAdmin = FALSE;
+    HANDLE hToken = NULL;
+    
+    // Método 1: Verificar mediante CheckTokenMembership
+    PSID adminGroup = NULL;
+    SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
+    
+    if (AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID,
+                                DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup)) {
+        CheckTokenMembership(NULL, adminGroup, &isAdmin);
+        FreeSid(adminGroup);
+        
+        if (isAdmin) {
+            std::cout << "[PRIVILEGE] Detectado como administrador (método 1)" << std::endl;
+            return true;
+        }
+    }
+    
+    // Método 2: Verificar el token de elevación directamente
+    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
+        TOKEN_ELEVATION elevation;
+        DWORD size;
+        
+        if (GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &size)) {
+            isAdmin = elevation.TokenIsElevated;
+            if (isAdmin) {
+                std::cout << "[PRIVILEGE] Detectado como administrador (método 2 - token elevado)" << std::endl;
+                CloseHandle(hToken);
+                return true;
+            }
+        }
+        
+        // Método 3: Verificar integridad del proceso
+        TOKEN_MANDATORY_LABEL* label = NULL;
+        if (GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &size) || GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+            label = (TOKEN_MANDATORY_LABEL*)malloc(size);
+            if (label && GetTokenInformation(hToken, TokenIntegrityLevel, label, size, &size)) {
+                DWORD integrityLevel = *GetSidSubAuthority(label->Label.Sid, *GetSidSubAuthorityCount(label->Label.Sid) - 1);
+                if (integrityLevel >= SECURITY_MANDATORY_HIGH_RID) {
+                    std::cout << "[PRIVILEGE] Detectado como administrador (método 3 - integridad alta: " << integrityLevel << ")" << std::endl;
+                    free(label);
+                    CloseHandle(hToken);
+                    return true;
+                }
+            }
+            if (label) free(label);
+        }
+        
+        CloseHandle(hToken);
+    }
+    
+    // Método 4: Fallback - Intentar operación que requiere admin
+    SC_HANDLE scm = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+    if (scm != NULL) {
+        CloseServiceHandle(scm);
+        std::cout << "[PRIVILEGE] Detectado como administrador (método 4 - acceso SCM)" << std::endl;
+        return true;
+    }
+    
+    std::cout << "[PRIVILEGE] NO detectado como administrador - todos los métodos fallaron" << std::endl;
+    return false;
+}
+
 json InjectionEngine::LoadDriver(int driverIndex) {
     if (IsDriverLoaded()) {
         return {{"success", false}, {"message", "Ya hay un driver cargado. Descárgalo primero."}};
     }
     if (driverIndex < 0 || driverIndex >= static_cast<int>(drivers.size())) {
         return {{"success", false}, {"message", "Índice de driver inválido."}};
+    }
+
+    // Verificar permisos de administrador
+    if (!IsRunningAsAdmin()) {
+        return {{"success", false}, {"message", "Se requieren permisos de administrador para cargar drivers. Ejecuta el programa como administrador."}};
+    }
+
+    // Habilitar privilegios necesarios
+    if (!EnablePrivilege(SE_LOAD_DRIVER_NAME)) {
+        return {{"success", false}, {"message", "No se pudieron habilitar los privilegios necesarios para cargar drivers."}};
     }
 
     const auto& driver = drivers[driverIndex];
@@ -135,9 +253,30 @@ json InjectionEngine::LoadDriver(int driverIndex) {
 
     std::string quotedPath = "\"" + std::string(absolutePath) + "\"";
 
-    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+    // Intentar diferentes niveles de permisos para el SCM
+    SC_HANDLE hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (!hSCM) {
-        return {{"success", false}, {"message", "Error al abrir SCM (¿sin permisos de admin?): " + std::to_string(GetLastError())}};
+        // Si falla con ALL_ACCESS, intentar con permisos más específicos
+        hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_CREATE_SERVICE | SC_MANAGER_CONNECT);
+        if (!hSCM) {
+            DWORD lastError = GetLastError();
+            std::string errorMsg = "Error al abrir SCM: " + std::to_string(lastError);
+            switch (lastError) {
+                case ERROR_ACCESS_DENIED:
+                    errorMsg += " (Acceso denegado - Verifica que el programa se ejecute como administrador)";
+                    break;
+                case ERROR_INVALID_PARAMETER:
+                    errorMsg += " (Parámetros inválidos)";
+                    break;
+                case ERROR_DATABASE_DOES_NOT_EXIST:
+                    errorMsg += " (Base de datos del SCM no existe)";
+                    break;
+                default:
+                    errorMsg += " (Error desconocido del sistema)";
+                    break;
+            }
+            return {{"success", false}, {"message", errorMsg}};
+        }
     }
 
     currentServiceName = GenerateRandomString(12);
@@ -282,7 +421,7 @@ json InjectionEngine::LoadCheatTable(const std::string& ctFilePath, DWORD proces
 }
 
 json InjectionEngine::GetProcessList() {
-    std::map<DWORD, ProcessInfo> processMap;
+    std::vector<ProcessInfo> processList;
 
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE) {
@@ -293,43 +432,29 @@ json InjectionEngine::GetProcessList() {
     pe32.dwSize = sizeof(PROCESSENTRY32);
     if (Process32First(hSnapshot, &pe32)) {
         do {
-            processMap[pe32.th32ProcessID] = {pe32.th32ProcessID, pe32.szExeFile, 0.0};
+            // Obtener información básica del proceso
+            ProcessInfo processInfo;
+            processInfo.pid = pe32.th32ProcessID;
+            processInfo.name = pe32.szExeFile;
+            processInfo.cpuUsage = 0.0; // CPU usage simplificado por ahora
+            
+            // Intentar obtener información adicional del proceso
+            HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe32.th32ProcessID);
+            if (hProcess) {
+                PROCESS_MEMORY_COUNTERS pmc;
+                if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
+                    // Usamos el working set como indicador aproximado de actividad
+                    processInfo.cpuUsage = static_cast<double>(pmc.WorkingSetSize) / (1024.0 * 1024.0); // MB
+                }
+                CloseHandle(hProcess);
+            }
+            
+            processList.push_back(processInfo);
         } while (Process32Next(hSnapshot, &pe32));
     }
     CloseHandle(hSnapshot);
     
-    PDH_HQUERY query;
-    if (PdhOpenQueryA(nullptr, 0, &query) == ERROR_SUCCESS) {
-        PDH_HCOUNTER counter;
-        if (PdhAddCounterA(query, "\\Process(*)\\% Processor Time", 0, &counter) == ERROR_SUCCESS) {
-            PdhCollectQueryData(query);
-            Sleep(100);
-            PdhCollectQueryData(query);
-
-            DWORD bufferSize = 0;
-            DWORD itemCount = 0;
-            if (PdhGetFormattedCounterArrayA(counter, PDH_FMT_DOUBLE, &bufferSize, &itemCount, nullptr) == PDH_MORE_DATA) {
-                std::vector<char> buffer(bufferSize);
-                PDH_FMT_COUNTERVALUE_ITEM_A* items = reinterpret_cast<PDH_FMT_COUNTERVALUE_ITEM_A*>(buffer.data());
-                if (PdhGetFormattedCounterArrayA(counter, PDH_FMT_DOUBLE, &bufferSize, &itemCount, items) == ERROR_SUCCESS) {
-                    for (auto& pair : processMap) {
-                        for (DWORD i = 0; i < itemCount; ++i) {
-                            if (pair.second.name == items[i].szName) {
-                                pair.second.cpuUsage += items[i].FmtValue.doubleValue;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        PdhCloseQuery(query);
-    }
-    
-    std::vector<ProcessInfo> processList;
-    for (const auto& pair : processMap) {
-        processList.push_back(pair.second);
-    }
-
+    // Ordenar por "actividad" (memoria en uso como proxy)
     std::sort(processList.begin(), processList.end(), [](const ProcessInfo& a, const ProcessInfo& b) {
         return a.cpuUsage > b.cpuUsage;
     });
@@ -365,7 +490,7 @@ json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
     return {{"success", true}, {"entries", entries}};
 }
 
-json InjectionEngine::ControlCheatEntry(DWORD processId, int entryId, bool activate) {
+json InjectionEngine::ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate) {
     std::string action = activate ? "true" : "false";
     std::string script = "local al = getAddressList()\n";
     script += "local entry = al.getMemoryRecordByID(" + std::to_string(entryId) + ")\n";
@@ -377,7 +502,7 @@ json InjectionEngine::ControlCheatEntry(DWORD processId, int entryId, bool activ
     return {{"success", false}, {"message", "Fallo al ejecutar el script de control."}};
 }
 
-json InjectionEngine::SetCheatEntryValue(DWORD processId, int entryId, const std::string& value) {
+json InjectionEngine::SetCheatEntryValue(const std::string& ctFilePath, DWORD processId, int entryId, const std::string& value) {
     std::string script = "local al = getAddressList()\n";
     script += "local entry = al.getMemoryRecordByID(" + std::to_string(entryId) + ")\n";
     script += "if entry then entry.Value = [[" + value + "]] end";
@@ -396,12 +521,12 @@ json InjectionEngine::GetCheatScript(const std::string& ctFilePath, int entryId)
     std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     file.close();
 
-    std::regex re("<CheatEntry ID=\"" + std::to_string(entryId) + "\".*?>(.*?)</CheatEntry>", std::regex::dotall);
+    std::regex re("<CheatEntry ID=\"" + std::to_string(entryId) + "\"[\\s\\S]*?>[\\s\\S]*?</CheatEntry>");
     std::smatch entryMatch;
     
     if (std::regex_search(content, entryMatch, re)) {
         std::string entryContent = entryMatch[1].str();
-        std::regex scriptRe("<AssemblerScript>(.*?)</AssemblerScript>", std::regex::dotall);
+        std::regex scriptRe("<AssemblerScript>([\\s\\S]*?)</AssemblerScript>");
         std::smatch scriptMatch;
         if (std::regex_search(entryContent, scriptMatch, scriptRe)) {
             return {{"success", true}, {"script", scriptMatch[1].str()}};
@@ -452,5 +577,59 @@ json InjectionEngine::GetSystemStatus() {
     status["currentDriverName"] = GetCurrentDriverName();
     status["serviceName"] = IsDriverLoaded() ? currentServiceName : "N/A";
     status["cheatEnginePath"] = std::filesystem::absolute("core_dlls/cheatengine-x86_64.exe").string();
+    
+    // Información de privilegios y permisos
+    status["runningAsAdmin"] = IsRunningAsAdmin();
+    status["loadDriverPrivilege"] = EnablePrivilege(SE_LOAD_DRIVER_NAME);
+    status["debugPrivilege"] = EnablePrivilege(SE_DEBUG_NAME);
+    
     return status;
+}
+
+json InjectionEngine::FindProcess(const std::string& processName) {
+    std::vector<ProcessInfo> foundProcesses;
+    
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) {
+        return {{"success", false}, {"message", "CreateToolhelp32Snapshot falló."}};
+    }
+
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+    if (Process32First(hSnapshot, &pe32)) {
+        do {
+            std::string currentProcessName = pe32.szExeFile;
+            
+            // Buscar coincidencias exactas o parciales (case-insensitive)
+            std::transform(currentProcessName.begin(), currentProcessName.end(), currentProcessName.begin(), ::tolower);
+            std::string searchName = processName;
+            std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
+            
+            if (currentProcessName.find(searchName) != std::string::npos) {
+                ProcessInfo processInfo;
+                processInfo.pid = pe32.th32ProcessID;
+                processInfo.name = pe32.szExeFile;
+                processInfo.cpuUsage = 0.0;
+                
+                // Intentar obtener información adicional del proceso
+                HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pe32.th32ProcessID);
+                if (hProcess) {
+                    PROCESS_MEMORY_COUNTERS pmc;
+                    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
+                        processInfo.cpuUsage = static_cast<double>(pmc.WorkingSetSize) / (1024.0 * 1024.0); // MB
+                    }
+                    CloseHandle(hProcess);
+                }
+                
+                foundProcesses.push_back(processInfo);
+            }
+        } while (Process32Next(hSnapshot, &pe32));
+    }
+    CloseHandle(hSnapshot);
+    
+    if (foundProcesses.empty()) {
+        return {{"success", false}, {"message", "No se encontraron procesos con el nombre: " + processName}};
+    }
+    
+    return {{"success", true}, {"processes", foundProcesses}, {"count", foundProcesses.size()}};
 }

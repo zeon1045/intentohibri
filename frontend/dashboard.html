@@ -3,407 +3,604 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Belzebub - Professional Suite</title>
+    <title>üî• Belzebub - Professional Suite</title>
     <style>
-        :root {
-            --bg-dark: #121212; --bg-light: #1e1e1e; --primary: #c70039;
-            --secondary: #ff5733; --success: #4caf50; --error: #f44336; --text: #e0e0e0;
-            --text-muted: #888;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+        
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg-dark);
-            color: var(--text); margin: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
         }
-        .header { text-align: center; padding-bottom: 10px; }
-        .header h1 { color: var(--primary); margin: 0; font-size: 2.5rem; font-weight: 700; letter-spacing: 2px; }
-        .header p { color: var(--text-muted); margin-top: 5px; }
-        .card { background-color: var(--bg-light); border-radius: 12px; padding: 20px; box-shadow: 0 6px 15px rgba(0,0,0,0.4); border: 1px solid #2a2a2a; }
-        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--primary); }
-        .card-header h2 { margin: 0; color: var(--primary); font-size: 1.3rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--secondary); }
-        input[type="text"], input[type="number"], select {
-            width: 100%; padding: 12px; border: 1px solid #444; border-radius: 6px;
-            background-color: #2a2a2a; color: var(--text); box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        input[type="text"]:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(255, 87, 51, 0.3); }
-        .file-input-group { display: flex; gap: 10px; }
-        .file-input-group input[type="text"] { flex-grow: 1; }
-        button {
-            padding: 10px 18px; border: none; border-radius: 6px; font-weight: 600;
-            cursor: pointer; transition: all 0.2s; background-color: var(--primary); color: white;
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
         }
-        button:hover { background-color: var(--secondary); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        button:disabled { background-color: #555; cursor: not-allowed; transform: none; box-shadow: none; }
-        button.btn-danger { background-color: var(--error); }
-        button.btn-success { background-color: var(--success); }
-        .log-container .tabs { display: flex; border-bottom: 1px solid #444; }
-        .log-container .tab-button { padding: 10px 15px; cursor: pointer; background: none; border: none; color: var(--text-muted); font-size: 1rem; }
-        .log-container .tab-button.active { color: var(--primary); border-bottom: 2px solid var(--primary); font-weight: 600; }
-        .log-area { display: none; background-color: #0a0a0a; height: 250px; overflow-y: auto; padding: 15px; border-radius: 0 0 6px 6px; font-family: 'Courier New', monospace; font-size: 0.9rem; border: 1px solid #444; border-top: none; }
-        .log-area.active { display: block; }
-        .log-entry { margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dotted #333; word-wrap: break-word; }
-        .log-info { color: #3498db; } .log-success { color: var(--success); } .log-error { color: var(--error); }
-        #detailedLog pre { background-color: #1c1c1c; padding: 8px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
-        ul { list-style: none; padding: 0; max-height: 200px; overflow-y: auto; }
-        #driverList li, #cheatEntries li { background-color: #2a2a2a; padding: 12px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s; }
-        #driverList li { cursor: pointer; } #driverList li:hover { background-color: #3a3a3a; } #driverList li.selected { background-color: var(--primary); }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
-        .modal-content { background-color: var(--bg-light); margin: 8% auto; padding: 25px; border-radius: 12px; border: 1px solid var(--primary); width: 80%; max-width: 800px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--secondary); padding-bottom: 15px; margin-bottom: 15px; }
-        .modal-header h2 { margin: 0; }
-        .close-button { color: var(--text); font-size: 32px; font-weight: bold; cursor: pointer; }
-        .close-button:hover { color: var(--secondary); }
-        #processTable { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        #processTable th, #processTable td { padding: 10px; text-align: left; border-bottom: 1px solid #444; }
-        #processTable th { cursor: pointer; background-color: #2a2a2a; }
-        #processTable tbody tr:hover { background-color: var(--primary); cursor: pointer; }
-        #scriptEditor { width: 100%; height: 300px; background-color: #0a0a0a; color: var(--text); font-family: 'Courier New', monospace; padding: 10px; border-radius: 6px; border: 1px solid #444; box-sizing: border-box; margin-top: 10px; }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 1.4em;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #fff;
+        }
+        
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            background: white;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            min-width: 120px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #3742fa, #2f3542);
+        }
+        
+        .btn-success {
+            background: linear-gradient(45deg, #2ed573, #1e90ff);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background: #2ed573;
+            box-shadow: 0 0 10px #2ed573;
+        }
+        
+        .status-offline {
+            background: #ff3838;
+            box-shadow: 0 0 10px #ff3838;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .message-success {
+            background: rgba(46, 213, 115, 0.2);
+            border: 1px solid #2ed573;
+            color: #2ed573;
+        }
+        
+        .message-error {
+            background: rgba(255, 56, 56, 0.2);
+            border: 1px solid #ff3838;
+            color: #ff3838;
+        }
+        
+        .process-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .process-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .process-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .process-item.selected {
+            background: rgba(46, 213, 115, 0.3);
+        }
+        
+        .process-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .process-details {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .file-drop-zone {
+            border: 2px dashed rgba(255,255,255,0.5);
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .file-drop-zone:hover, .file-drop-zone.dragover {
+            border-color: #2ed573;
+            background: rgba(46, 213, 115, 0.1);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .info-card {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .info-card h3 {
+            margin-bottom: 10px;
+            color: #feca57;
+        }
+        
+        .info-card p {
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
-
-    <header class="header">
-        <h1>BELZEBUB</h1>
-        <p>Professional Suite v3.0</p>
-    </header>
-
-    <div class="card">
-        <div class="card-header"><h2>Estado del Sistema</h2></div>
-        <div id="statusBar" style="display: flex; flex-wrap: wrap; gap: 30px; font-size: 1.1rem;">
-            <div><strong>Estado del Driver:</strong> <span id="driverStatus">No Cargado</span></div>
-            <div><strong>Proceso Objetivo:</strong> <span id="processStatus">Ninguno</span></div>
+    <div class="container">
+        <div class="header">
+            <h1>üî• Belzebub Professional Suite</h1>
+            <p>Sistema avanzado de inyecci√≥n y manipulaci√≥n de memoria</p>
         </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <div class="card-header"><h2>1. Gesti&oacute;n de Drivers y Procesos</h2></div>
-            <div class="form-group">
-                <label for="driverList">Drivers Disponibles</label>
-                <ul id="driverList"><li class="log-info">Cargando...</li></ul>
-                <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <button id="loadDriverBtn" class="btn-success">Cargar Driver</button>
-                    <button id="unloadDriverBtn" class="btn-danger">Descargar Driver</button>
+        
+        <div id="messages"></div>
+        
+        <div class="main-grid">
+            <!-- Driver Management -->
+            <div class="section">
+                <h2><span class="status-indicator" id="driver-status"></span>Gesti√≥n de Drivers</h2>
+                <div class="form-group">
+                    <label for="driver-select">Driver Disponible:</label>
+                    <select id="driver-select">
+                        <option value="">Cargando drivers...</option>
+                    </select>
                 </div>
+                <button class="btn" id="load-driver-btn">Cargar Driver</button>
+                <button class="btn btn-secondary" id="unload-driver-btn">Descargar Driver</button>
             </div>
-            <div class="form-group">
-                <label for="openProcessListBtn">Proceso Objetivo</label>
-                <button id="openProcessListBtn" style="width: 100%;">Seleccionar Proceso...</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header"><h2>2. Inyecci&oacute;n y Control</h2></div>
-            <div class="form-group">
-                <label for="dllPath">Inyecci&oacute;n de DLL</label>
-                <div class="file-input-group">
-                     <input type="text" id="dllPath" placeholder="C:\ruta\completa\a\mi.dll">
-                     <button onclick="browseForFile('dll', 'dllPath')">Navegar...</button>
+            
+            <!-- Process Selection -->
+            <div class="section">
+                <h2>Selecci√≥n de Proceso</h2>
+                <div class="form-group">
+                    <label for="process-search">Buscar Proceso:</label>
+                    <input type="text" id="process-search" placeholder="Nombre del proceso...">
                 </div>
-            </div>
-            <div class="form-group">
-                <label for="ctPath">Cargar Cheat Table (.CT)</label>
-                 <div class="file-input-group">
-                    <input type="text" id="ctPath" placeholder="C:\ruta\completa\a\tabla.ct">
-                    <button onclick="browseForFile('ct', 'ctPath')">Navegar...</button>
+                <button class="btn btn-secondary" id="refresh-processes-btn">Actualizar Lista</button>
+                <div class="process-list" id="process-list">
+                    <div class="process-item">Cargando procesos...</div>
                 </div>
             </div>
         </div>
         
-        <div class="card" style="grid-column: 1 / -1;">
-             <div class="card-header"><h2>3. Control de Cheats y Herramientas</h2></div>
-             <div class="grid">
-                <div>
-                     <div class="form-group">
-                        <label>Entradas de la Tabla</label>
-                        <ul id="cheatEntries"><li>Cargue una tabla para ver las entradas.</li></ul>
-                     </div>
-                     <div class="form-group">
-                         <button id="loadCtToProcessBtn">Cargar Tabla al Proceso</button>
-                     </div>
-                    <div class="form-group">
-                        <label for="speedhackSlider">Speedhack: <span id="speedValue">1.0</span>x</label>
-                        <input type="range" id="speedhackSlider" min="0.1" max="5" step="0.1" value="1.0" style="width: 100%;">
-                    </div>
+        <div class="main-grid">
+            <!-- File Upload -->
+            <div class="section">
+                <h2>Carga de Cheat Table (.ct)</h2>
+                <div class="file-drop-zone" id="file-drop-zone">
+                    <p>üéØ Arrastra aqu√≠ tu archivo .ct</p>
+                    <p>o haz clic para seleccionar</p>
                 </div>
-                <div class="log-container">
-                     <div class="form-group">
-                        <label>Registro de Actividad</label>
-                        <div class="tabs">
-                            <button id="tabBtnGeneral" class="tab-button active" onclick="showTab('generalLog')">General</button>
-                            <button id="tabBtnDetailed" class="tab-button" onclick="showTab('detailedLog')">Detallado</button>
-                        </div>
-                        <div id="generalLog" class="log-area active"></div>
-                        <div id="detailedLog" class="log-area"></div>
-                    </div>
+                <input type="file" id="file-input" accept=".ct" class="hidden">
+            </div>
+            
+            <!-- DLL Injection -->
+            <div class="section">
+                <h2>Inyecci√≥n de DLL</h2>
+                <div class="form-group">
+                    <label for="dll-path">Ruta de la DLL:</label>
+                    <input type="text" id="dll-path" placeholder="C:\\path\\to\\your.dll">
                 </div>
-             </div>
+                <button class="btn btn-success" id="inject-dll-btn">Inyectar DLL</button>
+            </div>
+        </div>
+        
+        <!-- System Status -->
+        <div class="section">
+            <h2>Estado del Sistema</h2>
+            <div class="info-grid" id="system-info">
+                <div class="info-card">
+                    <h3>Estado del Motor</h3>
+                    <p id="engine-status">Inicializando...</p>
+                </div>
+                <div class="info-card">
+                    <h3>Driver Cargado</h3>
+                    <p id="driver-loaded">Ninguno</p>
+                </div>
+                <div class="info-card">
+                    <h3>Proceso Objetivo</h3>
+                    <p id="target-process">No seleccionado</p>
+                </div>
+                <div class="info-card">
+                    <h3>Privilegios Admin</h3>
+                    <p id="admin-status">Verificando...</p>
+                </div>
+                <div class="info-card">
+                    <h3>Privilegios Driver</h3>
+                    <p id="driver-privileges">Verificando...</p>
+                </div>
+                <div class="info-card">
+                    <h3>Conexiones API</h3>
+                    <p id="api-status">Verificando...</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="processModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Lista de Procesos</h2>
-                <span class="close-button" onclick="closeModal('processModal')">&times;</span>
-            </div>
-            <input type="text" id="processSearch" placeholder="Filtrar por nombre o PID..." onkeyup="filterProcessList()" style="margin-bottom: 15px;">
-            <div style="max-height: 50vh; overflow-y: auto;">
-                <table id="processTable">
-                    <thead><tr><th onclick="sortTable(0, this)">Nombre &#8693;</th><th onclick="sortTable(1, this)">PID &#8693;</th><th onclick="sortTable(2, this)">CPU % &#8693;</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    
     <script>
-        const API = {
-            async post(endpoint, body) {
-                try {
-                    const response = await fetch(`/api/${endpoint}`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(body)
-                    });
-                    const responseData = await response.json();
-                    logDetail(`POST /api/${endpoint}`, body, responseData);
-                    if (!response.ok) throw new Error(responseData.message || `Error HTTP: ${response.status}`);
-                    return responseData;
-                } catch (error) {
-                    log(`Error en API POST/${endpoint}: ${error.message}`, 'error');
-                    return { success: false, message: error.message };
+        // Estado global de la aplicaci√≥n
+        const AppState = {
+            drivers: [],
+            processes: [],
+            selectedProcess: null,
+            currentDriver: null,
+            systemStatus: {}
+        };
+
+        // Utilidades
+        function showMessage(text, type = 'success') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${type}`;
+            messageDiv.textContent = text;
+            messagesDiv.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        function updateStatus(elementId, text, isOnline = true) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = text;
+            }
+        }
+
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
                 }
-            },
-            async get(endpoint) {
-                try {
-                    const response = await fetch(`/api/${endpoint}`);
-                    const responseData = await response.json();
-                    logDetail(`GET /api/${endpoint}`, null, responseData);
-                    if (!response.ok) throw new Error(responseData.message || `Error HTTP: ${response.status}`);
-                    return responseData;
-                } catch (error) {
-                    log(`Error en API GET/${endpoint}: ${error.message}`, 'error');
-                    return null;
+                
+                const response = await fetch(`/api/${endpoint}`, options);
+                return await response.json();
+            } catch (error) {
+                console.error(`Error calling ${endpoint}:`, error);
+                showMessage(`Error en API: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        // Funciones principales
+        async function loadDrivers() {
+            const result = await apiCall('drivers');
+            if (result) {
+                AppState.drivers = result;
+                const select = document.getElementById('driver-select');
+                select.innerHTML = '<option value="">Selecciona un driver...</option>';
+                
+                result.forEach((driver, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${driver.name} (${driver.tier})`;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        async function loadProcesses() {
+            const result = await apiCall('processes');
+            if (result && result.success) {
+                AppState.processes = result.processes;
+                renderProcessList(result.processes);
+            }
+        }
+
+        function renderProcessList(processes) {
+            const listDiv = document.getElementById('process-list');
+            listDiv.innerHTML = '';
+            
+            processes.slice(0, 15).forEach(proc => {
+                const item = document.createElement('div');
+                item.className = 'process-item';
+                item.onclick = () => selectProcess(proc);
+                item.innerHTML = `
+                    <div class="process-name">${proc.name}</div>
+                    <div class="process-details">PID: ${proc.pid} | Memoria: ${proc.cpuUsage.toFixed(1)} MB</div>
+                `;
+                listDiv.appendChild(item);
+            });
+        }
+
+        function selectProcess(process) {
+            AppState.selectedProcess = process;
+            updateStatus('target-process', `${process.name} (${process.pid})`);
+            
+            // Actualizar visualmente la selecci√≥n
+            document.querySelectorAll('.process-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.closest('.process-item').classList.add('selected');
+            
+            showMessage(`Proceso seleccionado: ${process.name}`, 'success');
+        }
+
+                 async function loadSystemStatus() {
+             const result = await apiCall('status');
+             if (result) {
+                 AppState.systemStatus = result;
+                 updateStatus('engine-status', 'Operativo');
+                 updateStatus('driver-loaded', result.currentDriverName || 'Ninguno');
+                 updateStatus('api-status', 'Conectado');
+                 
+                 // Actualizar informaci√≥n de privilegios
+                 updateStatus('admin-status', result.runningAsAdmin ? '‚úÖ Administrador' : '‚ùå Usuario Normal');
+                 updateStatus('driver-privileges', result.loadDriverPrivilege ? '‚úÖ Habilitados' : '‚ùå Sin Privilegios');
+                 
+                 // Actualizar indicador de driver
+                 const driverIndicator = document.getElementById('driver-status');
+                 if (result.driverLoaded) {
+                     driverIndicator.className = 'status-indicator status-online';
+                 } else {
+                     driverIndicator.className = 'status-indicator status-offline';
+                 }
+                 
+                 // Mostrar advertencia si no tiene privilegios
+                 if (!result.runningAsAdmin || !result.loadDriverPrivilege) {
+                     showMessage('‚ö†Ô∏è ADVERTENCIA: Privilegios insuficientes para cargar drivers. Ejecuta como administrador.', 'error');
+                 }
+             }
+         }
+
+        // Event Listeners
+        document.getElementById('load-driver-btn').onclick = async function() {
+            const selectedIndex = document.getElementById('driver-select').value;
+            if (!selectedIndex) {
+                showMessage('Por favor selecciona un driver', 'error');
+                return;
+            }
+            
+            const result = await apiCall('load_driver', 'POST', { id: parseInt(selectedIndex) });
+            if (result) {
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    loadSystemStatus();
+                } else {
+                    showMessage(result.message, 'error');
                 }
             }
         };
 
-        let state = { selectedDriverId: null, targetPID: null, targetProcessName: '', ctPath: '', allProcesses: [], sortConfig: { column: 2, asc: false } };
-
-        function log(message, type = 'info') {
-            const logArea = document.getElementById('generalLog');
-            const entry = document.createElement('div');
-            entry.className = `log-entry log-${type}`;
-            entry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logArea.appendChild(entry);
-            logArea.scrollTop = logArea.scrollHeight;
-        }
-
-        function logDetail(requestInfo, requestBody, responseData) {
-            const logArea = document.getElementById('detailedLog');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            let html = `<strong>[${new Date().toLocaleTimeString()}] ${requestInfo}</strong>`;
-            if (requestBody) html += `<br><em>Request:</em> <pre>${JSON.stringify(requestBody, null, 2)}</pre>`;
-            html += `<em>Response:</em> <pre>${JSON.stringify(responseData, null, 2)}</pre>`;
-            entry.innerHTML = html;
-            logArea.appendChild(entry);
-            logArea.scrollTop = logArea.scrollHeight;
-        }
-
-        function showTab(tabId) {
-            document.querySelectorAll('.log-area').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            document.getElementById(`tabBtn${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
-        }
-
-        function openModal(modalId) { document.getElementById(modalId).style.display = "block"; }
-        function closeModal(modalId) { document.getElementById(modalId).style.display = "none"; }
-
-        async function browseForFile(ext, inputId) {
-            log(`Abriendo explorador de archivos para .${ext}...`, 'info');
-            const res = await API.get(`browse-file?ext=${ext}`);
-            if (res && res.success) {
-                document.getElementById(inputId).value = res.path;
-                log(`Ruta seleccionada: ${res.path}`, 'success');
-            } else {
-                log(res.message || 'No se seleccion®Æ ning®≤n archivo.', 'info');
+        document.getElementById('unload-driver-btn').onclick = async function() {
+            const result = await apiCall('unload_driver', 'POST');
+            if (result) {
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    loadSystemStatus();
+                } else {
+                    showMessage(result.message, 'error');
+                }
             }
-        }
-        
-        function updateDriverStatus(status) {
-            const el = document.getElementById('driverStatus');
-            el.textContent = status.driverLoaded ? `Cargado (${status.currentDriverName})` : 'No Cargado';
-            el.style.color = status.driverLoaded ? 'var(--success)' : 'var(--error)';
-        }
+        };
 
-        function updateProcessStatus() {
-            const el = document.getElementById('processStatus');
-            if (state.targetPID) {
-                el.textContent = `${state.targetProcessName} (PID: ${state.targetPID})`;
-                el.style.color = 'var(--success)';
-            } else {
-                el.textContent = 'Ninguno';
-                el.style.color = 'var(--error)';
-            }
-        }
-        
-        function renderDriverList(drivers) {
-            const list = document.getElementById('driverList');
-            list.innerHTML = '';
-            if (!drivers || drivers.length === 0) {
-                list.innerHTML = '<li class="log-error">No se encontraron drivers disponibles. Ejecuta obtenerdrivers.ps1</li>';
+        document.getElementById('refresh-processes-btn').onclick = loadProcesses;
+
+        document.getElementById('inject-dll-btn').onclick = async function() {
+            if (!AppState.selectedProcess) {
+                showMessage('Por favor selecciona un proceso primero', 'error');
                 return;
             }
-            drivers.forEach(driver => {
-                const li = document.createElement('li');
-                li.dataset.driverId = driver.id;
-                const available = driver.status === 'Disponible';
-                li.innerHTML = `<span>${driver.name} (${driver.tier})</span><span style="color:${available ? 'var(--success)' : 'var(--error)'}">${driver.status}</span>`;
-                if (available) {
-                    li.onclick = () => {
-                        document.querySelectorAll('#driverList li').forEach(el => el.classList.remove('selected'));
-                        li.classList.add('selected');
-                        state.selectedDriverId = parseInt(driver.id, 10);
-                        log(`Driver pre-seleccionado: ${driver.name} (ID: ${state.selectedDriverId})`, 'info');
-                    };
-                } else {
-                    li.style.cursor = "not-allowed";
-                    li.style.opacity = "0.6";
-                }
-                list.appendChild(li);
-            });
-        }
-
-        function renderProcessList() {
-            const tableBody = document.querySelector("#processTable tbody");
-            tableBody.innerHTML = '';
             
-            const filter = document.getElementById('processSearch').value.toLowerCase();
-            const filtered = state.allProcesses.filter(p => 
-                p.name.toLowerCase().includes(filter) || 
-                p.pid.toString().includes(filter)
+            const dllPath = document.getElementById('dll-path').value;
+            if (!dllPath) {
+                showMessage('Por favor ingresa la ruta de la DLL', 'error');
+                return;
+            }
+            
+            const result = await apiCall('inject_dll', 'POST', {
+                pid: AppState.selectedProcess.pid,
+                dllPath: dllPath
+            });
+            
+            if (result) {
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            }
+        };
+
+        // B√∫squeda de procesos
+        document.getElementById('process-search').oninput = function() {
+            const query = this.value.toLowerCase();
+            const filtered = AppState.processes.filter(proc => 
+                proc.name.toLowerCase().includes(query)
             );
+            renderProcessList(filtered);
+        };
 
-            filtered.forEach(p => {
-                const row = tableBody.insertRow();
-                row.innerHTML = `<td>${p.name}</td><td>${p.pid}</td><td>${p.cpuUsage.toFixed(2)}%</td>`;
-                row.onclick = () => {
-                    state.targetPID = p.pid;
-                    state.targetProcessName = p.name;
-                    updateProcessStatus();
-                    closeModal('processModal');
-                    log(`Proceso objetivo establecido: ${p.name} (PID: ${p.pid})`, 'success');
-                };
-            });
-        }
-        
-        function sortTable(columnIndex, th) {
-            if(state.sortConfig.column === columnIndex) {
-                state.sortConfig.asc = !state.sortConfig.asc;
-            } else {
-                state.sortConfig.column = columnIndex;
-                state.sortConfig.asc = true;
+        // File drop zone
+        const dropZone = document.getElementById('file-drop-zone');
+        const fileInput = document.getElementById('file-input');
+
+        dropZone.onclick = () => fileInput.click();
+
+        dropZone.ondragover = function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        };
+
+        dropZone.ondragleave = function() {
+            this.classList.remove('dragover');
+        };
+
+        dropZone.ondrop = function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
             }
+        };
 
-            document.querySelectorAll('#processTable th').forEach(h => h.innerHTML = h.innerHTML.replace(' ®ã', '').replace(' °¯', ''));
-            th.innerHTML += state.sortConfig.asc ? ' °¯' : ' ®ã';
-            
-            state.allProcesses.sort((a, b) => {
-                let valA, valB;
-                if(columnIndex === 0) { // Nombre
-                    valA = a.name.toLowerCase();
-                    valB = b.name.toLowerCase();
-                } else if(columnIndex === 1) { // PID
-                    valA = a.pid;
-                    valB = b.pid;
-                } else { // CPU
-                    valA = a.cpuUsage;
-                    valB = b.cpuUsage;
-                }
-
-                if (valA < valB) return state.sortConfig.asc ? -1 : 1;
-                if (valA > valB) return state.sortConfig.asc ? 1 : -1;
-                return 0;
-            });
-            renderProcessList();
-        }
-        
-        function filterProcessList() {
-            renderProcessList();
-        }
-
-        async function initialize() {
-            log('Inicializando Belzebub - Professional Suite...', 'info');
-            try {
-                updateDriverStatus(await API.get('status'));
-                renderDriverList(await API.get('drivers'));
-                updateProcessStatus();
-                setupEventListeners();
-                log('Suite inicializada y lista.', 'success');
-            } catch (e) {
-                log('Error fatal durante la inicializaci®Æn. Aseg®≤rese de que el backend est®¢ en ejecuci®Æn.', 'error');
+        fileInput.onchange = function() {
+            if (this.files.length > 0) {
+                handleFileUpload(this.files[0]);
             }
-        }
+        };
 
-        function setupEventListeners() {
-            document.getElementById('loadDriverBtn').onclick = async () => {
-                if (state.selectedDriverId === null) return log('Por favor, selecciona un driver de la lista.', 'error');
-                log(`Cargando driver ID: ${state.selectedDriverId}...`);
-                const res = await API.post('load_driver', { id: state.selectedDriverId });
-                log(res.message, res.success ? 'success' : 'error');
-                if(res.success) updateDriverStatus(await API.get('status'));
-            };
+        function handleFileUpload(file) {
+            if (!file.name.endsWith('.ct')) {
+                showMessage('Por favor selecciona un archivo .ct v√°lido', 'error');
+                return;
+            }
             
-            document.getElementById('unloadDriverBtn').onclick = async () => {
-                log('Descargando driver actual...');
-                const res = await API.post('unload_driver', {});
-                log(res.message, res.success ? 'success' : 'error');
-                if(res.success) updateDriverStatus(await API.get('status'));
-            };
-
-            document.getElementById('openProcessListBtn').onclick = async () => {
-                log('Obteniendo lista de procesos...');
-                openModal('processModal');
-                const res = await API.get('processes');
-                if (res && res.success) {
-                    state.allProcesses = res.processes;
-                    // Initial sort by CPU descending
-                    sortTable(2, document.querySelector('#processTable th:nth-child(3)'));
-                    state.sortConfig.asc = !state.sortConfig.asc; // sortTable toggles it, so we revert
-                     sortTable(2, document.querySelector('#processTable th:nth-child(3)'));
-
-                    log(`Se encontraron ${res.processes.length} procesos.`);
-                } else {
-                     log(res ? res.message : 'No se pudo obtener la lista de procesos.', 'error');
-                }
-            };
-
-            document.getElementById('injectDllBtn').onclick = async () => {
-                if (!state.targetPID) return log('Selecciona un proceso objetivo primero.', 'error');
-                const dllPath = document.getElementById('dllPath').value;
-                if (!dllPath) return log('Ingresa la ruta completa de la DLL.', 'error');
-                log(`Inyectando '${dllPath}' en PID ${state.targetPID}...`);
-                const res = await API.post('inject_dll', { pid: parseInt(state.targetPID, 10), dllPath });
-                log(res.message, res.success ? 'success' : 'error');
-            };
-
-            document.getElementById('loadCtToProcessBtn').onclick = async () => {
-                if (!state.targetPID) return log('Selecciona un proceso objetivo primero.', 'error');
-                state.ctPath = document.getElementById('ctPath').value;
-                if (!state.ctPath) return log('Ingresa la ruta del archivo .CT.', 'error');
-                log(`Cargando '${state.ctPath}' en motor y adjuntando a PID ${state.targetPID}...`);
-                const res = await API.post('load_ct', { pid: parseInt(state.targetPID, 10), ctPath: state.ctPath });
-                log(res.message, res.success ? 'success' : 'error');
-            };
+            showMessage(`Archivo cargado: ${file.name}`, 'success');
+            // Aqu√≠ ir√≠a la l√≥gica para procesar el archivo CT
         }
 
-        window.onload = initialize;
-        window.onclick = (event) => { if (event.target.classList.contains('modal')) closeModal(event.target.id); }
+        // Inicializaci√≥n
+        window.onload = function() {
+            console.log('üî• Belzebub Dashboard iniciado');
+            loadDrivers();
+            loadProcesses();
+            loadSystemStatus();
+            
+            // Actualizar estado cada 10 segundos
+            setInterval(() => {
+                loadSystemStatus();
+            }, 10000);
+        };
     </script>
 </body>
 </html>

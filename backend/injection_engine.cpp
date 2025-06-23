@@ -177,11 +177,17 @@ json InjectionEngine::LoadDriver(int driverIndex) {
         return {{"success", false}, {"message", "Se requieren permisos de administrador para cargar drivers. Ejecuta el programa como administrador."}};
     }
 
-    // --- MEJORA: LIMPIEZA JUSTO ANTES DE CARGAR ---
-    if (!CleanupService(currentDriver->filename)) {
-        // No lo tratamos como un error fatal, pero lo advertimos.
-        std::cerr << "[LOAD] Advertencia: No se pudo garantizar la limpieza del servicio previo." << std::endl;
-    }
+    // --- MEJORA: LIMPIEZA ROBUSTA ANTES DE CARGAR ---
+    std::string baseServiceName = currentDriver->filename;
+    std::cout << "[CLEAN] Realizando limpieza preventiva de servicios existentes..." << std::endl;
+    
+    // Intentar limpiar tanto el nombre base como posibles variaciones
+    CleanupService(baseServiceName);
+    CleanupService(baseServiceName.substr(0, baseServiceName.find('.'))); // Sin extensión
+    
+    // Generar nombre único para el servicio
+    currentServiceName = "BEL_" + baseServiceName.substr(0, 8) + "_" + GenerateRandomString(6);
+    std::cout << "[CLEAN] Usando nombre de servicio único: " << currentServiceName << std::endl;
 
     std::cout << "[PRIV] Solicitando privilegios para cargar drivers..." << std::endl;
     BOOL privilegeResult = SetLoadDriverPrivilege(TRUE);
@@ -214,7 +220,6 @@ json InjectionEngine::LoadDriver(int driverIndex) {
         return {{"success", false}, {"message", errorMsg}};
     }
 
-    currentServiceName = GenerateRandomString(12);
     std::cout << "[SCM] Creando el servicio '" << currentServiceName << "'..." << std::endl;
     
     SC_HANDLE service = CreateServiceA(
@@ -331,11 +336,30 @@ std::string InjectionEngine::GetCurrentDriverName() const {
 json InjectionEngine::GetSystemStatus() {
     json status;
     status["runningAsAdmin"] = IsUserAdmin() ? 1 : 0;
-    status["loadDriverPrivilege"] = SetLoadDriverPrivilege(TRUE) ? 1 : 0;
-    status["debugPrivilege"] = SetPrivilege(L"SeDebugPrivilege", TRUE) ? 1 : 0;
-    status["driverLoaded"] = IsDriverLoaded();
+    
+    // Solo verificar privilegios sin cambiar el estado actual
+    bool loadPrivAvailable = false;
+    bool debugPrivAvailable = false;
+    
+    // Verificar temporalmente los privilegios sin afectar el estado
+    if (IsUserAdmin()) {
+        loadPrivAvailable = SetLoadDriverPrivilege(TRUE);
+        if (loadPrivAvailable) {
+            SetLoadDriverPrivilege(FALSE); // Restaurar estado anterior
+        }
+        debugPrivAvailable = SetPrivilege(L"SeDebugPrivilege", TRUE);
+        if (debugPrivAvailable) {
+            SetPrivilege(L"SeDebugPrivilege", FALSE); // Restaurar estado anterior
+        }
+    }
+    
+    status["loadDriverPrivilege"] = loadPrivAvailable ? 1 : 0;
+    status["debugPrivilege"] = debugPrivAvailable ? 1 : 0;
+    status["driverLoaded"] = IsDriverLoaded(); // Usa la variable de estado consistente
     status["driverCount"] = GetDriverCount();
     status["currentDriver"] = GetCurrentDriverName();
+    status["serviceName"] = IsDriverLoaded() ? currentServiceName : "N/A";
+    
     return status;
 }
 

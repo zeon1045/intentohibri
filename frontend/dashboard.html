@@ -284,6 +284,12 @@
             <div class="section">
                 <h2>Selección de Proceso</h2>
                 <div class="form-group">
+                    <label for="process-select">Proceso Objetivo:</label>
+                    <select id="process-select">
+                        <option value="">Cargando procesos...</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="process-search">Buscar Proceso:</label>
                     <input type="text" id="process-search" placeholder="Nombre del proceso...">
                 </div>
@@ -295,14 +301,19 @@
         </div>
         
         <div class="main-grid">
-            <!-- File Upload -->
+            <!-- Cheat Table Management -->
             <div class="section">
-                <h2>Carga de Cheat Table (.ct)</h2>
-                <div class="file-drop-zone" id="file-drop-zone">
-                    <p>🎯 Arrastra aquí tu archivo .ct</p>
-                    <p>o haz clic para seleccionar</p>
+                <h2>Gestión de Cheat Table (.ct)</h2>
+                <div class="form-group">
+                    <label for="ct-path">Archivo Cheat Table:</label>
+                    <input type="file" id="ct-path" accept=".ct" style="background: rgba(255,255,255,0.9); color: #333;">
                 </div>
-                <input type="file" id="file-input" accept=".ct" class="hidden">
+                <div class="form-group">
+                    <label>Entradas de la Tabla:</label>
+                    <ul id="cheat-entries" style="max-height: 200px; overflow-y: auto; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px; list-style: none;">
+                        <li style="color: #ccc; font-style: italic;">Cargue una tabla para ver las entradas.</li>
+                    </ul>
+                </div>
             </div>
             
             <!-- DLL Injection -->
@@ -350,257 +361,291 @@
 
     <script>
         // Estado global de la aplicación
-        const AppState = {
-            drivers: [],
+        const state = {
+            targetPID: null,
+            ctPath: '',
+            systemStatus: {},
             processes: [],
-            selectedProcess: null,
-            currentDriver: null,
-            systemStatus: {}
+            drivers: [],
+            cheatEntries: []
         };
 
-        // Utilidades
-        function showMessage(text, type = 'success') {
+        // Objeto para centralizar las llamadas a la API
+        const API = {
+            async get(endpoint) {
+                try {
+                    const response = await fetch(`http://localhost:12345/api/${endpoint}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    log(`Error en API GET ${endpoint}: ${error}`, 'error');
+                    return null;
+                }
+            },
+            async post(endpoint, body) {
+                try {
+                    const response = await fetch(`http://localhost:12345/api/${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    log(`Error en API POST ${endpoint}: ${error}`, 'error');
+                    return { success: false, message: `Fallo en la comunicación con la API: ${error}` };
+                }
+            }
+        };
+
+        // Función para mostrar logs en la interfaz
+        function log(message, type = 'info') {
             const messagesDiv = document.getElementById('messages');
+            if (!messagesDiv) return;
+            
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message message-${type}`;
-            messageDiv.textContent = text;
+            messageDiv.className = `message message-${type === 'error' ? 'error' : 'success'}`;
+            messageDiv.innerHTML = `<span style="font-weight: bold;">[${new Date().toLocaleTimeString()}]</span> ${message}`;
             messagesDiv.appendChild(messageDiv);
             
             setTimeout(() => {
-                messageDiv.remove();
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
             }, 5000);
         }
 
-        function updateStatus(elementId, text, isOnline = true) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.textContent = text;
+        // --- FUNCIONES DE RENDERIZADO ---
+
+        function renderStatus(status) {
+            state.systemStatus = status;
+            
+            // Actualizar indicadores de estado
+            const updateElement = (id, content) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = content;
+            };
+            
+            updateElement('engine-status', 'Operativo');
+            updateElement('driver-loaded', status.currentDriver || 'Ninguno');
+            updateElement('api-status', 'Conectado');
+            updateElement('admin-status', status.runningAsAdmin ? '✅ Administrador' : '❌ Usuario Normal');
+            updateElement('driver-privileges', status.loadDriverPrivilege ? '✅ Habilitados' : '❌ Sin Privilegios');
+            
+            // Actualizar indicador visual del driver
+            const driverIndicator = document.getElementById('driver-status');
+            if (driverIndicator) {
+                driverIndicator.className = status.driverLoaded ? 
+                    'status-indicator status-online' : 'status-indicator status-offline';
+            }
+            
+            // Mostrar advertencia si es necesario
+            if (!status.runningAsAdmin) {
+                log('⚠️ ADVERTENCIA: Ejecutar como administrador para máxima funcionalidad', 'error');
             }
         }
 
-        async function apiCall(endpoint, method = 'GET', data = null) {
-            try {
-                const options = {
-                    method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                };
-                
-                if (data) {
-                    options.body = JSON.stringify(data);
-                }
-                
-                const response = await fetch(`/api/${endpoint}`, options);
-                return await response.json();
-            } catch (error) {
-                console.error(`Error calling ${endpoint}:`, error);
-                showMessage(`Error en API: ${error.message}`, 'error');
-                return null;
-            }
-        }
-
-        // Funciones principales
-        async function loadDrivers() {
-            const result = await apiCall('drivers');
-            if (result) {
-                AppState.drivers = result;
-                const select = document.getElementById('driver-select');
-                select.innerHTML = '<option value="">Selecciona un driver...</option>';
-                
-                result.forEach((driver, index) => {
+        function renderProcesses(processes) {
+            state.processes = processes;
+            const select = document.getElementById('process-select');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccionar Proceso...</option>';
+                processes.forEach(p => {
                     const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = `${driver.name} (${driver.tier})`;
+                    option.value = p.pid;
+                    option.textContent = `${p.name} (PID: ${p.pid})`;
+                    select.appendChild(option);
+                });
+            }
+            
+            // También actualizar la lista visual si existe
+            const listDiv = document.getElementById('process-list');
+            if (listDiv) {
+                listDiv.innerHTML = '';
+                processes.slice(0, 15).forEach(proc => {
+                    const item = document.createElement('div');
+                    item.className = 'process-item';
+                    item.onclick = () => {
+                        state.targetPID = proc.pid;
+                        const processSelect = document.getElementById('process-select');
+                        if (processSelect) processSelect.value = proc.pid;
+                        log(`Proceso seleccionado: ${proc.name} (PID: ${proc.pid})`);
+                    };
+                    item.innerHTML = `
+                        <div class="process-name">${proc.name}</div>
+                        <div class="process-details">PID: ${proc.pid} | Memoria: ${proc.memoryUsage || 0} MB</div>
+                    `;
+                    listDiv.appendChild(item);
+                });
+            }
+        }
+
+        function renderDrivers(drivers) {
+            state.drivers = drivers;
+            const select = document.getElementById('driver-select');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccionar Driver...</option>';
+                drivers.forEach(d => {
+                    const option = document.createElement('option');
+                    option.value = d.id;
+                    option.textContent = `${d.filename} (x${d.architecture})`;
                     select.appendChild(option);
                 });
             }
         }
 
-        async function loadProcesses() {
-            const result = await apiCall('processes');
-            if (result && result.success) {
-                AppState.processes = result.processes;
-                renderProcessList(result.processes);
-            }
-        }
-
-        function renderProcessList(processes) {
-            const listDiv = document.getElementById('process-list');
-            listDiv.innerHTML = '';
+        function renderCheatEntries(entries) {
+            state.cheatEntries = entries;
+            const list = document.getElementById('cheat-entries');
+            if (!list) return;
             
-            processes.slice(0, 15).forEach(proc => {
-                const item = document.createElement('div');
-                item.className = 'process-item';
-                item.onclick = () => selectProcess(proc);
-                item.innerHTML = `
-                    <div class="process-name">${proc.name}</div>
-                    <div class="process-details">PID: ${proc.pid} | Memoria: ${proc.cpuUsage.toFixed(1)} MB</div>
+            list.innerHTML = '';
+            if (!entries || entries.length === 0) {
+                list.innerHTML = '<li style="color: #ccc; font-style: italic;">Cargue una tabla para ver las entradas.</li>';
+                return;
+            }
+            entries.forEach(entry => {
+                const li = document.createElement('li');
+                li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);';
+                li.innerHTML = `
+                    <span>${entry.description} (ID: ${entry.id})</span>
+                    <input type="checkbox" class="cheat-toggle" data-entry-id="${entry.id}" style="margin-left: 10px;">
                 `;
-                listDiv.appendChild(item);
+                list.appendChild(li);
             });
         }
 
-        function selectProcess(process) {
-            AppState.selectedProcess = process;
-            updateStatus('target-process', `${process.name} (${process.pid})`);
-            
-            // Actualizar visualmente la selección
-            document.querySelectorAll('.process-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            event.target.closest('.process-item').classList.add('selected');
-            
-            showMessage(`Proceso seleccionado: ${process.name}`, 'success');
+        // --- LÓGICA DE EVENTOS ---
+
+        function setupEventListeners() {
+            // Evento para seleccionar proceso
+            const processSelect = document.getElementById('process-select');
+            if (processSelect) {
+                processSelect.onchange = (e) => {
+                    state.targetPID = e.target.value;
+                    if (state.targetPID) {
+                        log(`Proceso objetivo: PID ${state.targetPID}`);
+                    }
+                };
+            }
+
+            // Evento para cargar driver
+            const loadDriverBtn = document.getElementById('load-driver-btn');
+            if (loadDriverBtn) {
+                loadDriverBtn.onclick = async () => {
+                    const driverId = document.getElementById('driver-select')?.value;
+                    if (!driverId) {
+                        log('Por favor, selecciona un driver para cargar.', 'error');
+                        return;
+                    }
+                    log(`Cargando driver con ID: ${driverId}...`);
+                    const res = await API.post('load_driver', { id: parseInt(driverId, 10) });
+                    log(res.message, res.success ? 'success' : 'error');
+                    
+                    // ✅ SOLUCIÓN AL PROBLEMA 1: Actualizar estado después de la acción
+                    if (res.success) {
+                        const newStatus = await API.get('status');
+                        if (newStatus) renderStatus(newStatus);
+                    }
+                };
+            }
+
+            // Evento para descargar driver
+            const unloadDriverBtn = document.getElementById('unload-driver-btn');
+            if (unloadDriverBtn) {
+                unloadDriverBtn.onclick = async () => {
+                    log('Descargando driver actual...');
+                    const res = await API.post('unload_driver', {});
+                    log(res.message, res.success ? 'success' : 'error');
+                    
+                    // ✅ SOLUCIÓN AL PROBLEMA 1: Actualizar estado después de la acción
+                    if (res.success) {
+                        const newStatus = await API.get('status');
+                        if (newStatus) renderStatus(newStatus);
+                    }
+                };
+            }
+
+            // ✅ SOLUCIÓN AL PROBLEMA 2: Evento para archivo .CT
+            const ctPathInput = document.getElementById('ct-path');
+            if (ctPathInput) {
+                ctPathInput.addEventListener('change', async (event) => {
+                    const fileInput = event.target;
+                    if (!fileInput.files || fileInput.files.length === 0) {
+                        renderCheatEntries([]);
+                        return;
+                    }
+                    
+                    const path = fileInput.value; // Usar value en lugar de files[0].path para compatibilidad
+                    state.ctPath = path;
+
+                    log(`Leyendo entradas de la tabla: ${path}`);
+                    const res = await API.post('get_ct_entries', { ctPath: path });
+                    
+                    if (res && res.success) {
+                        log(`Se encontraron ${res.entries.length} entradas.`, 'success');
+                        renderCheatEntries(res.entries);
+                    } else {
+                        log(res.message || 'No se pudieron leer las entradas de la tabla.', 'error');
+                        renderCheatEntries([]);
+                    }
+                });
+            }
+
+            // Evento para refrescar procesos
+            const refreshBtn = document.getElementById('refresh-processes-btn');
+            if (refreshBtn) {
+                refreshBtn.onclick = async () => {
+                    log('Refrescando lista de procesos...');
+                    const processes = await API.get('processes');
+                    if (processes && processes.processes) {
+                        renderProcesses(processes.processes);
+                        log('Lista de procesos actualizada.', 'success');
+                    }
+                };
+            }
+
+            // Búsqueda de procesos
+            const processSearch = document.getElementById('process-search');
+            if (processSearch) {
+                processSearch.oninput = function() {
+                    const query = this.value.toLowerCase();
+                    const filtered = state.processes.filter(proc => 
+                        proc.name.toLowerCase().includes(query)
+                    );
+                    renderProcesses(filtered);
+                };
+            }
         }
 
-                 async function loadSystemStatus() {
-             const result = await apiCall('status');
-             if (result) {
-                 AppState.systemStatus = result;
-                 updateStatus('engine-status', 'Operativo');
-                 updateStatus('driver-loaded', result.currentDriverName || 'Ninguno');
-                 updateStatus('api-status', 'Conectado');
-                 
-                 // Actualizar información de privilegios
-                 updateStatus('admin-status', result.runningAsAdmin ? '✅ Administrador' : '❌ Usuario Normal');
-                 updateStatus('driver-privileges', result.loadDriverPrivilege ? '✅ Habilitados' : '❌ Sin Privilegios');
-                 
-                 // Actualizar indicador de driver
-                 const driverIndicator = document.getElementById('driver-status');
-                 if (result.driverLoaded) {
-                     driverIndicator.className = 'status-indicator status-online';
-                 } else {
-                     driverIndicator.className = 'status-indicator status-offline';
-                 }
-                 
-                 // Mostrar advertencia si no tiene privilegios
-                 if (!result.runningAsAdmin || !result.loadDriverPrivilege) {
-                     showMessage('⚠️ ADVERTENCIA: Privilegios insuficientes para cargar drivers. Ejecuta como administrador.', 'error');
-                 }
-             }
-         }
+        // Función principal de inicialización
+        async function initialize() {
+            log('🔥 Inicializando Belzebub v3...');
+            setupEventListeners();
 
-        // Event Listeners
-        document.getElementById('load-driver-btn').onclick = async function() {
-            const selectedIndex = document.getElementById('driver-select').value;
-            if (!selectedIndex) {
-                showMessage('Por favor selecciona un driver', 'error');
-                return;
-            }
+            // Cargar datos iniciales
+            const [status, processes, drivers] = await Promise.all([
+                API.get('status'),
+                API.get('processes'),
+                API.get('drivers')
+            ]);
+
+            if (status) renderStatus(status);
+            if (processes && processes.processes) renderProcesses(processes.processes);
+            if (drivers) renderDrivers(drivers);
             
-            const result = await apiCall('load_driver', 'POST', { id: parseInt(selectedIndex) });
-            if (result) {
-                if (result.success) {
-                    showMessage(result.message, 'success');
-                    loadSystemStatus();
-                } else {
-                    showMessage(result.message, 'error');
-                }
-            }
-        };
-
-        document.getElementById('unload-driver-btn').onclick = async function() {
-            const result = await apiCall('unload_driver', 'POST');
-            if (result) {
-                if (result.success) {
-                    showMessage(result.message, 'success');
-                    loadSystemStatus();
-                } else {
-                    showMessage(result.message, 'error');
-                }
-            }
-        };
-
-        document.getElementById('refresh-processes-btn').onclick = loadProcesses;
-
-        document.getElementById('inject-dll-btn').onclick = async function() {
-            if (!AppState.selectedProcess) {
-                showMessage('Por favor selecciona un proceso primero', 'error');
-                return;
-            }
-            
-            const dllPath = document.getElementById('dll-path').value;
-            if (!dllPath) {
-                showMessage('Por favor ingresa la ruta de la DLL', 'error');
-                return;
-            }
-            
-            const result = await apiCall('inject_dll', 'POST', {
-                pid: AppState.selectedProcess.pid,
-                dllPath: dllPath
-            });
-            
-            if (result) {
-                if (result.success) {
-                    showMessage(result.message, 'success');
-                } else {
-                    showMessage(result.message, 'error');
-                }
-            }
-        };
-
-        // Búsqueda de procesos
-        document.getElementById('process-search').oninput = function() {
-            const query = this.value.toLowerCase();
-            const filtered = AppState.processes.filter(proc => 
-                proc.name.toLowerCase().includes(query)
-            );
-            renderProcessList(filtered);
-        };
-
-        // File drop zone
-        const dropZone = document.getElementById('file-drop-zone');
-        const fileInput = document.getElementById('file-input');
-
-        dropZone.onclick = () => fileInput.click();
-
-        dropZone.ondragover = function(e) {
-            e.preventDefault();
-            this.classList.add('dragover');
-        };
-
-        dropZone.ondragleave = function() {
-            this.classList.remove('dragover');
-        };
-
-        dropZone.ondrop = function(e) {
-            e.preventDefault();
-            this.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFileUpload(files[0]);
-            }
-        };
-
-        fileInput.onchange = function() {
-            if (this.files.length > 0) {
-                handleFileUpload(this.files[0]);
-            }
-        };
-
-        function handleFileUpload(file) {
-            if (!file.name.endsWith('.ct')) {
-                showMessage('Por favor selecciona un archivo .ct válido', 'error');
-                return;
-            }
-            
-            showMessage(`Archivo cargado: ${file.name}`, 'success');
-            // Aquí iría la lógica para procesar el archivo CT
+            renderCheatEntries([]); // Inicializar lista de cheats vacía
+            log('✅ Inicialización completa. Sistema listo.');
         }
 
-        // Inicialización
-        window.onload = function() {
-            console.log('🔥 Belzebub Dashboard iniciado');
-            loadDrivers();
-            loadProcesses();
-            loadSystemStatus();
-            
-            // Actualizar estado cada 10 segundos
-            setInterval(() => {
-                loadSystemStatus();
-            }, 10000);
-        };
+        // Iniciar la aplicación cuando la ventana se cargue
+        window.onload = initialize;
+
+        // Actualización automática del estado cada 30 segundos
+        setInterval(async () => {
+            const status = await API.get('status');
+            if (status) renderStatus(status);
+        }, 30000);
     </script>
 </body>
 </html>

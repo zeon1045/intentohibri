@@ -129,17 +129,26 @@ json InjectionEngine::ListAvailableDrivers() {
 // Las funciones de verificación de privilegios están ahora en privilege_manager.h/cpp
 
 json InjectionEngine::LoadDriver(int driverIndex) {
+    std::cout << "[DEBUG] LoadDriver iniciado con driverIndex: " << driverIndex << std::endl;
+    
     if (IsDriverLoaded()) {
+        std::cout << "[DEBUG] Ya hay un driver cargado" << std::endl;
         return {{"success", false}, {"message", "Ya hay un driver cargado. Descárgalo primero."}};
     }
+    std::cout << "[DEBUG] Verificando índice de driver. Size: " << drivers.size() << std::endl;
+    
     if (driverIndex < 0 || driverIndex >= static_cast<int>(drivers.size())) {
+        std::cout << "[DEBUG] Índice inválido: " << driverIndex << std::endl;
         return {{"success", false}, {"message", "Índice de driver inválido."}};
     }
 
+    std::cout << "[DEBUG] Verificando permisos de administrador..." << std::endl;
     // Verificar permisos de administrador
     if (!IsUserAdmin()) {
+        std::cout << "[DEBUG] No es administrador" << std::endl;
         return {{"success", false}, {"message", "Se requieren permisos de administrador para cargar drivers. Ejecuta el programa como administrador."}};
     }
+    std::cout << "[DEBUG] Permisos de administrador verificados" << std::endl;
 
     // --- HABILITAR PRIVILEGIOS PARA CARGAR DRIVERS ---
     std::cout << "[PRIV] Solicitando privilegios para cargar drivers..." << std::endl;
@@ -152,12 +161,18 @@ json InjectionEngine::LoadDriver(int driverIndex) {
         std::cout << "[PRIV] ✅ Privilegios obtenidos correctamente." << std::endl;
     }
 
+    std::cout << "[DEBUG] Accediendo al driver en índice: " << driverIndex << std::endl;
     const auto& driver = drivers[driverIndex];
+    std::cout << "[DEBUG] Driver obtenido: " << driver.name << " (" << driver.filename << ")" << std::endl;
+    
     std::string driver_relative_path = "drivers\\" + driver.filename;
+    std::cout << "[DEBUG] Ruta relativa: " << driver_relative_path << std::endl;
 
     if (!std::filesystem::exists(driver_relative_path)) {
+        std::cout << "[DEBUG] Archivo no encontrado: " << driver_relative_path << std::endl;
         return {{"success", false}, {"message", "Archivo del driver no encontrado en la carpeta 'drivers': " + driver.filename}};
     }
+    std::cout << "[DEBUG] Archivo encontrado correctamente" << std::endl;
 
     char absolutePath[MAX_PATH];
     if (GetFullPathNameA(driver_relative_path.c_str(), MAX_PATH, absolutePath, NULL) == 0) {
@@ -165,7 +180,7 @@ json InjectionEngine::LoadDriver(int driverIndex) {
     }
 
     // --- MEJORA: LIMPIAR SERVICIOS HUÉRFANOS ANTES DE CARGAR ---
-    CleanupExistingDriverServices(absolutePath);
+    // CleanupExistingDriverServices(absolutePath); // TEMPORALMENTE DESHABILITADO PARA DEBUG
 
     std::string quotedPath = "\"" + std::string(absolutePath) + "\"";
 

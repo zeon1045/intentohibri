@@ -20,8 +20,8 @@
 #include <algorithm>
 #include <commdlg.h> // Para el diálogo de archivos
 
-// Declaración de función del injection_engine
-extern bool IsRunningAsAdmin();
+// Incluir privilege_manager para funciones de administrador
+#include "privilege_manager.h"
 
 #define SERVER_PORT 12345
 
@@ -98,7 +98,7 @@ int main() {
     std::cout << "=================================================" << std::endl;
     
     // Verificar privilegios de administrador al inicio
-    if (!IsRunningAsAdmin()) {
+    if (!IsUserAdmin()) {
         std::cout << "[ADMIN] ⚠️  No se detectaron privilegios de administrador." << std::endl;
         std::cout << "[ADMIN] 🔧 Continuando sin privilegios de administrador (funcionalidad limitada)..." << std::endl;
         std::cout << "[ADMIN] 💡 Para funcionalidad completa, ejecutar como administrador manualmente." << std::endl;

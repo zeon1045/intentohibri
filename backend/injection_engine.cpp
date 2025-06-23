@@ -120,114 +120,9 @@ json InjectionEngine::ListAvailableDrivers() {
     return result;
 }
 
-// Función para verificar y habilitar privilegios necesarios
-bool EnablePrivilege(LPCSTR privilegeName) {
-    HANDLE hToken;
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
-        DWORD error = GetLastError();
-        std::cout << "[PRIVILEGE] Error abriendo token: " << error << std::endl;
-        return false;
-    }
+// Las funciones de privilegios están ahora en privilege_manager.h/cpp
 
-    LUID luid;
-    if (!LookupPrivilegeValueA(NULL, privilegeName, &luid)) {
-        DWORD error = GetLastError();
-        std::cout << "[PRIVILEGE] Error obteniendo LUID para " << privilegeName << ": " << error << std::endl;
-        CloseHandle(hToken);
-        return false;
-    }
-
-    TOKEN_PRIVILEGES tp;
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Luid = luid;
-    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-
-    if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL)) {
-        DWORD error = GetLastError();
-        std::cout << "[PRIVILEGE] Error ajustando privilegios para " << privilegeName << ": " << error << std::endl;
-        CloseHandle(hToken);
-        return false;
-    }
-    
-    DWORD lastError = GetLastError();
-    CloseHandle(hToken);
-    
-    if (lastError == ERROR_SUCCESS) {
-        std::cout << "[PRIVILEGE] Privilegio " << privilegeName << " habilitado exitosamente" << std::endl;
-        return true;
-    } else if (lastError == ERROR_NOT_ALL_ASSIGNED) {
-        std::cout << "[PRIVILEGE] Privilegio " << privilegeName << " no pudo ser asignado (probablemente no disponible)" << std::endl;
-        return false;
-    } else {
-        std::cout << "[PRIVILEGE] Error desconocido habilitando " << privilegeName << ": " << lastError << std::endl;
-        return false;
-    }
-}
-
-// Función para verificar si se ejecuta como administrador
-bool IsRunningAsAdmin() {
-    BOOL isAdmin = FALSE;
-    HANDLE hToken = NULL;
-    
-    // Método 1: Verificar mediante CheckTokenMembership
-    PSID adminGroup = NULL;
-    SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
-    
-    if (AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID,
-                                DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroup)) {
-        CheckTokenMembership(NULL, adminGroup, &isAdmin);
-        FreeSid(adminGroup);
-        
-        if (isAdmin) {
-            std::cout << "[PRIVILEGE] Detectado como administrador (método 1)" << std::endl;
-            return true;
-        }
-    }
-    
-    // Método 2: Verificar el token de elevación directamente
-    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken)) {
-        TOKEN_ELEVATION elevation;
-        DWORD size;
-        
-        if (GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &size)) {
-            isAdmin = elevation.TokenIsElevated;
-            if (isAdmin) {
-                std::cout << "[PRIVILEGE] Detectado como administrador (método 2 - token elevado)" << std::endl;
-                CloseHandle(hToken);
-                return true;
-            }
-        }
-        
-        // Método 3: Verificar integridad del proceso
-        TOKEN_MANDATORY_LABEL* label = NULL;
-        if (GetTokenInformation(hToken, TokenIntegrityLevel, NULL, 0, &size) || GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            label = (TOKEN_MANDATORY_LABEL*)malloc(size);
-            if (label && GetTokenInformation(hToken, TokenIntegrityLevel, label, size, &size)) {
-                DWORD integrityLevel = *GetSidSubAuthority(label->Label.Sid, *GetSidSubAuthorityCount(label->Label.Sid) - 1);
-                if (integrityLevel >= SECURITY_MANDATORY_HIGH_RID) {
-                    std::cout << "[PRIVILEGE] Detectado como administrador (método 3 - integridad alta: " << integrityLevel << ")" << std::endl;
-                    free(label);
-                    CloseHandle(hToken);
-                    return true;
-                }
-            }
-            if (label) free(label);
-        }
-        
-        CloseHandle(hToken);
-    }
-    
-    // Método 4: Fallback - Intentar operación que requiere admin
-    SC_HANDLE scm = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-    if (scm != NULL) {
-        CloseServiceHandle(scm);
-        std::cout << "[PRIVILEGE] Detectado como administrador (método 4 - acceso SCM)" << std::endl;
-        return true;
-    }
-    
-    std::cout << "[PRIVILEGE] NO detectado como administrador - todos los métodos fallaron" << std::endl;
-    return false;
-}
+// Las funciones de verificación de privilegios están ahora en privilege_manager.h/cpp
 
 json InjectionEngine::LoadDriver(int driverIndex) {
     if (IsDriverLoaded()) {
@@ -238,13 +133,19 @@ json InjectionEngine::LoadDriver(int driverIndex) {
     }
 
     // Verificar permisos de administrador
-    if (!IsRunningAsAdmin()) {
+    if (!IsUserAdmin()) {
         return {{"success", false}, {"message", "Se requieren permisos de administrador para cargar drivers. Ejecuta el programa como administrador."}};
     }
 
-    // Habilitar privilegios necesarios
-    if (!EnablePrivilege(SE_LOAD_DRIVER_NAME)) {
-        return {{"success", false}, {"message", "No se pudieron habilitar los privilegios necesarios para cargar drivers."}};
+    // --- HABILITAR PRIVILEGIOS PARA CARGAR DRIVERS ---
+    std::cout << "[PRIV] Solicitando privilegios para cargar drivers..." << std::endl;
+    BOOL privilegeResult = SetLoadDriverPrivilege(TRUE);
+    if (!privilegeResult) {
+        std::cout << "[PRIV] ⚠️  SeLoadDriverPrivilege no disponible directamente." << std::endl;
+        std::cout << "[PRIV] 🔧 Continuando con métodos alternativos..." << std::endl;
+        // No fallamos aquí - continuamos con el proceso de carga
+    } else {
+        std::cout << "[PRIV] ✅ Privilegios obtenidos correctamente." << std::endl;
     }
 
     const auto& driver = drivers[driverIndex];
@@ -350,6 +251,10 @@ json InjectionEngine::UnloadDriver() {
     std::string unloadedDriverName = GetCurrentDriverName();
     currentDriverIndex = -1;
     currentServiceName = "";
+
+    // --- REVOCAR PRIVILEGIOS DE CARGA DE DRIVERS ---
+    std::cout << "[PRIV] Revocando privilegios de carga de drivers." << std::endl;
+    SetLoadDriverPrivilege(FALSE);
 
     return {{"success", true}, {"message", "Driver '" + unloadedDriverName + "' descargado."}};
 }
@@ -589,9 +494,14 @@ json InjectionEngine::GetSystemStatus() {
     status["serviceName"] = IsDriverLoaded() ? currentServiceName : "N/A";
     status["cheatEnginePath"] = std::filesystem::absolute("core_dlls/cheatengine-x86_64.exe").string();
     
-    // Información de privilegios y permisos usando el nuevo sistema
-    status["runningAsAdmin"] = IsRunningAsAdmin();
-    status["loadDriverPrivilege"] = IsPrivilegeEnabled(L"SeLoadDriverPrivilege");
+    // --- INFORMACIÓN DE PRIVILEGIOS Y PERMISOS ---
+    status["runningAsAdmin"] = IsUserAdmin();
+    // Comprueba si podemos obtener el privilegio, y luego lo revoca para no dejarlo activo
+    BOOL can_get_load_priv = SetLoadDriverPrivilege(TRUE);
+    if (can_get_load_priv) {
+        SetLoadDriverPrivilege(FALSE);
+    }
+    status["loadDriverPrivilege"] = can_get_load_priv;
     status["debugPrivilege"] = IsPrivilegeEnabled(L"SeDebugPrivilege");
     
     return status;

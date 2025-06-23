@@ -164,4 +164,32 @@ BOOL InitializeBelzebubPrivileges() {
     std::cout << "[PRIVILEGE] ================================================\n" << std::endl;
 
     return allPrivilegesOk;
+}
+
+BOOL IsUserAdmin() {
+    BOOL isAdmin = FALSE;
+    PSID administratorsGroup = NULL;
+    SID_IDENTIFIER_AUTHORITY ntAuthority = SECURITY_NT_AUTHORITY;
+
+    // Crear un SID para el grupo de Administradores locales
+    if (AllocateAndInitializeSid(
+        &ntAuthority,
+        2,
+        SECURITY_BUILTIN_DOMAIN_RID,
+        DOMAIN_ALIAS_RID_ADMINS,
+        0, 0, 0, 0, 0, 0,
+        &administratorsGroup)) {
+        
+        // Verificar si el token del proceso actual es miembro del grupo de Administradores
+        if (!CheckTokenMembership(NULL, administratorsGroup, &isAdmin)) {
+            isAdmin = FALSE;
+        }
+        FreeSid(administratorsGroup);
+    }
+
+    return isAdmin;
+}
+
+BOOL SetLoadDriverPrivilege(BOOL enable) {
+    return SetPrivilege(L"SeLoadDriverPrivilege", enable);
 } 

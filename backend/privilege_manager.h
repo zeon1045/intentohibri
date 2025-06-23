@@ -24,4 +24,17 @@ BOOL IsPrivilegeEnabled(LPCWSTR lpszPrivilege);
  */
 BOOL InitializeBelzebubPrivileges();
 
+/**
+ * @brief Comprueba si el proceso actual se está ejecutando con privilegios de administrador.
+ * @return TRUE si el usuario es administrador, FALSE en caso contrario.
+ */
+BOOL IsUserAdmin();
+
+/**
+ * @brief Habilita o deshabilita el privilegio para cargar/descargar drivers.
+ * @param enable TRUE para habilitar, FALSE para deshabilitar.
+ * @return TRUE si la operación fue exitosa, FALSE en caso contrario.
+ */
+BOOL SetLoadDriverPrivilege(BOOL enable);
+
 #endif // PRIVILEGE_MANAGER_H 

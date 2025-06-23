@@ -37,6 +37,17 @@ struct ProcessInfo {
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(ProcessInfo, pid, name, cpuUsage);
 };
 
+// Estructura para entradas de Cheat Table
+struct CheatEntry {
+    int id = 0;
+    std::string description;
+    std::string type;
+    std::string address;
+    std::string value;
+    bool enabled = false;
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(CheatEntry, id, description, type, address, value, enabled);
+};
+
 // Declaración de la clase InjectionEngine
 class InjectionEngine {
 private:
@@ -53,6 +64,13 @@ private:
     bool CleanupService(const std::string& serviceName);
     std::string GenerateRandomString(int length);
     bool ExecuteLuaScript(const std::string& scriptContent, DWORD processId);
+    
+    // --- FUNCIONES PARA CHEAT TABLES ---
+    std::vector<CheatEntry> ParseCheatTable(const std::string& filePath);
+    std::string ExtractBetween(const std::string& source, const std::string& start_delim, const std::string& end_delim);
+    
+    // --- CACHE DE CHEAT TABLES ---
+    std::map<std::string, std::vector<CheatEntry>> cheatTableCache;
 
 public:
     InjectionEngine();

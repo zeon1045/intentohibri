@@ -11,13 +11,10 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/libs
 )
 
-# Archivos fuente
+# Archivos fuente - SOLO LOS NECESARIOS
 set(SOURCES
     backend/main.cpp
-    backend/server.cpp
     backend/injection_engine.cpp
-    backend/driver_manager.cpp
-    backend/ct_parser.cpp
     backend/privilege_manager.cpp
     backend/utils.cpp
 )
@@ -25,17 +22,13 @@ set(SOURCES
 # Crear ejecutable
 add_executable(Belzebub ${SOURCES})
 
-# Dependiendo de tu sistema, puede que necesites estas librerías para networking
-find_library(WS2_32_LIBRARY ws2_32)
-if(WS2_32_LIBRARY)
-    target_link_libraries(Belzebub ${WS2_32_LIBRARY})
-endif()
-
-find_library(NTDLL_LIBRARY ntdll)
-if(NTDLL_LIBRARY)
-    target_link_libraries(Belzebub ${NTDLL_LIBRARY})
-endif()
-
-# Librerías adicionales para información de procesos y privilegios
-target_link_libraries(Belzebub psapi advapi32)
+# Librerías de Windows necesarias para Belzebub
+target_link_libraries(Belzebub
+    ws2_32      # Para networking (httplib)
+    advapi32    # Para servicios y privilegios (SCM)
+    shell32     # Para APIs de Shell de Windows
+    psapi       # Para información de procesos
+    pdh         # Para métricas de rendimiento (CPU)
+    comdlg32    # Para diálogos comunes
+)
 

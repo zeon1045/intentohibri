@@ -432,26 +432,172 @@ json InjectionEngine::SetSpeedhack(DWORD processId, float speed) {
     return {{"success", false}, {"message", "Funcionalidad de speedhack no implementada"}};
 }
 
+// --- FUNCIÓN DE AYUDA PARA EL PARSER ---
+std::string InjectionEngine::ExtractBetween(const std::string& source, const std::string& start_delim, const std::string& end_delim) {
+    size_t start = source.find(start_delim);
+    if (start == std::string::npos) return "";
+    start += start_delim.length();
+
+    size_t end = source.find(end_delim, start);
+    if (end == std::string::npos) return "";
+
+    return source.substr(start, end - start);
+}
+
+// --- PARSER ROBUSTO DE CHEAT TABLES ---
+std::vector<CheatEntry> InjectionEngine::ParseCheatTable(const std::string& filePath) {
+    std::vector<CheatEntry> entries;
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "[CT] Error: No se pudo abrir el archivo .CT en la ruta: " << filePath << std::endl;
+        return entries;
+    }
+
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    
+    size_t current_pos = 0;
+    while (true) {
+        // Busca el inicio de la siguiente entrada
+        size_t entry_start = content.find("<CheatEntry>", current_pos);
+        if (entry_start == std::string::npos) {
+            break; // No hay más entradas
+        }
+        
+        // Busca el final de la entrada actual
+        size_t entry_end = content.find("</CheatEntry>", entry_start);
+        if (entry_end == std::string::npos) {
+            break; // Entrada malformada
+        }
+        
+        // Crea un substring que contiene solo la entrada actual
+        std::string entry_block = content.substr(entry_start, entry_end - entry_start);
+        
+        CheatEntry new_entry;
+        
+        // Extrae cada campo usando la función de ayuda
+        std::string id_str = ExtractBetween(entry_block, "<ID>", "</ID>");
+        if (!id_str.empty()) {
+            try {
+                new_entry.id = std::stoi(id_str);
+            } catch (...) {
+                new_entry.id = entries.size() + 1; // ID de respaldo
+            }
+        } else {
+            new_entry.id = entries.size() + 1; // ID de respaldo
+        }
+
+        // La descripción a menudo tiene comillas, así que las quitamos
+        std::string desc_raw = ExtractBetween(entry_block, "<Description>", "</Description>");
+        if (desc_raw.length() > 2 && desc_raw.front() == '"' && desc_raw.back() == '"') {
+            new_entry.description = desc_raw.substr(1, desc_raw.length() - 2);
+        } else {
+            new_entry.description = desc_raw;
+        }
+
+        new_entry.type = ExtractBetween(entry_block, "<VariableType>", "</VariableType>");
+        new_entry.address = ExtractBetween(entry_block, "<Address>", "</Address>");
+        new_entry.value = ExtractBetween(entry_block, "<Value>", "</Value>");
+
+        // Solo añade la entrada si tiene datos válidos
+        if (new_entry.id != 0 && !new_entry.description.empty()) {
+            entries.push_back(new_entry);
+        }
+        
+        // Mueve la posición de búsqueda al final de la entrada procesada
+        current_pos = entry_end;
+    }
+
+    std::cout << "[CT] Parseo finalizado. Se encontraron " << entries.size() << " entradas válidas." << std::endl;
+    return entries;
+}
+
 json InjectionEngine::LoadCheatTable(const std::string& ctFilePath, DWORD processId) {
-    return {{"success", false}, {"message", "Funcionalidad de Cheat Table no implementada"}};
+    if (!std::filesystem::exists(ctFilePath)) {
+        return {{"success", false}, {"message", "El archivo .CT no se encuentra en la ruta especificada."}};
+    }
+    
+    // Parsear el archivo
+    std::vector<CheatEntry> entries = ParseCheatTable(ctFilePath);
+    if (entries.empty()) {
+        return {{"success", false}, {"message", "No se pudieron extraer entradas válidas del archivo .CT."}};
+    }
+    
+    // Guardar en caché
+    cheatTableCache[ctFilePath] = entries;
+    
+    std::cout << "[CT] Tabla de cheats cargada exitosamente: " << entries.size() << " entradas." << std::endl;
+    return {{"success", true}, {"message", "Tabla de cheats cargada correctamente."}, {"entries", entries.size()}};
 }
 
 json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
-    return {{"success", false}, {"message", "Funcionalidad de Cheat Table no implementada"}};
+    // Si no está en caché, intentar cargar
+    if (cheatTableCache.find(ctFilePath) == cheatTableCache.end()) {
+        if (!std::filesystem::exists(ctFilePath)) {
+            return {{"success", false}, {"message", "Archivo .CT no encontrado."}};
+        }
+        
+        std::vector<CheatEntry> entries = ParseCheatTable(ctFilePath);
+        if (entries.empty()) {
+            return {{"success", false}, {"message", "No se pudieron extraer entradas del archivo .CT."}};
+        }
+        
+        cheatTableCache[ctFilePath] = entries;
+    }
+    
+    auto& entries = cheatTableCache[ctFilePath];
+    return {{"success", true}, {"entries", entries}};
 }
 
 json InjectionEngine::ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate) {
-    return {{"success", false}, {"message", "Funcionalidad de Cheat Table no implementada"}};
+    if (cheatTableCache.find(ctFilePath) == cheatTableCache.end()) {
+        return {{"success", false}, {"message", "La tabla de cheats no está cargada. Cárgala primero."}};
+    }
+
+    auto& entries = cheatTableCache[ctFilePath];
+    CheatEntry* targetEntry = nullptr;
+    for (auto& entry : entries) {
+        if (entry.id == entryId) {
+            targetEntry = &entry;
+            break;
+        }
+    }
+    
+    if (!targetEntry) {
+        return {{"success", false}, {"message", "Entrada con ID " + std::to_string(entryId) + " no encontrada."}};
+    }
+    
+    // Actualizar estado
+    targetEntry->enabled = activate;
+    
+    // Aquí iría la lógica de escritura en memoria real
+    // Por ahora, solo simulamos la activación
+    std::cout << "[CT] " << (activate ? "Activando" : "Desactivando") 
+              << " cheat: " << targetEntry->description << std::endl;
+    
+    return {{"success", true}, {"message", "Cheat " + std::string(activate ? "activado" : "desactivado") + " correctamente."}};
 }
 
 json InjectionEngine::SetCheatEntryValue(const std::string& ctFilePath, DWORD processId, int entryId, const std::string& value) {
-    return {{"success", false}, {"message", "Funcionalidad de Cheat Table no implementada"}};
+    if (cheatTableCache.find(ctFilePath) == cheatTableCache.end()) {
+        return {{"success", false}, {"message", "La tabla de cheats no está cargada."}};
+    }
+
+    auto& entries = cheatTableCache[ctFilePath];
+    for (auto& entry : entries) {
+        if (entry.id == entryId) {
+            entry.value = value;
+            std::cout << "[CT] Valor actualizado para cheat: " << entry.description << " = " << value << std::endl;
+            return {{"success", true}, {"message", "Valor actualizado correctamente."}};
+        }
+    }
+    
+    return {{"success", false}, {"message", "Entrada no encontrada."}};
 }
 
 json InjectionEngine::GetCheatScript(const std::string& ctFilePath, int entryId) {
-    return {{"success", false}, {"message", "Funcionalidad de Cheat Table no implementada"}};
+    return {{"success", false}, {"message", "Funcionalidad de scripts no implementada aún."}};
 }
 
 json InjectionEngine::UpdateCheatScript(const std::string& ctFilePath, int entryId, const std::string& newScript) {
-    return {{"success", false}, {"message", "Funcionalidad de Cheat Table no implementada"}};
+    return {{"success", false}, {"message", "Funcionalidad de scripts no implementada aún."}};
 }

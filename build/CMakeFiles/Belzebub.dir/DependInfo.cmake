@@ -8,12 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "C:/Users/mosta/Desktop/intentogibrido/backend/ct_parser.cpp" "CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj.d"
-  "C:/Users/mosta/Desktop/intentogibrido/backend/driver_manager.cpp" "CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj.d"
   "C:/Users/mosta/Desktop/intentogibrido/backend/injection_engine.cpp" "CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj.d"
   "C:/Users/mosta/Desktop/intentogibrido/backend/main.cpp" "CMakeFiles/Belzebub.dir/backend/main.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/main.cpp.obj.d"
   "C:/Users/mosta/Desktop/intentogibrido/backend/privilege_manager.cpp" "CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj.d"
-  "C:/Users/mosta/Desktop/intentogibrido/backend/server.cpp" "CMakeFiles/Belzebub.dir/backend/server.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/server.cpp.obj.d"
   "C:/Users/mosta/Desktop/intentogibrido/backend/utils.cpp" "CMakeFiles/Belzebub.dir/backend/utils.cpp.obj" "gcc" "CMakeFiles/Belzebub.dir/backend/utils.cpp.obj.d"
   )
 

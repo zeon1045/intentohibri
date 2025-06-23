@@ -128,54 +128,6 @@ Belzebub/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/build
 .PHONY : Belzebub/fast
 
-backend/ct_parser.obj: backend/ct_parser.cpp.obj
-.PHONY : backend/ct_parser.obj
-
-# target to build an object file
-backend/ct_parser.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj
-.PHONY : backend/ct_parser.cpp.obj
-
-backend/ct_parser.i: backend/ct_parser.cpp.i
-.PHONY : backend/ct_parser.i
-
-# target to preprocess a source file
-backend/ct_parser.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.i
-.PHONY : backend/ct_parser.cpp.i
-
-backend/ct_parser.s: backend/ct_parser.cpp.s
-.PHONY : backend/ct_parser.s
-
-# target to generate assembly for a file
-backend/ct_parser.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.s
-.PHONY : backend/ct_parser.cpp.s
-
-backend/driver_manager.obj: backend/driver_manager.cpp.obj
-.PHONY : backend/driver_manager.obj
-
-# target to build an object file
-backend/driver_manager.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj
-.PHONY : backend/driver_manager.cpp.obj
-
-backend/driver_manager.i: backend/driver_manager.cpp.i
-.PHONY : backend/driver_manager.i
-
-# target to preprocess a source file
-backend/driver_manager.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.i
-.PHONY : backend/driver_manager.cpp.i
-
-backend/driver_manager.s: backend/driver_manager.cpp.s
-.PHONY : backend/driver_manager.s
-
-# target to generate assembly for a file
-backend/driver_manager.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.s
-.PHONY : backend/driver_manager.cpp.s
-
 backend/injection_engine.obj: backend/injection_engine.cpp.obj
 .PHONY : backend/injection_engine.obj
 
@@ -248,30 +200,6 @@ backend/privilege_manager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.s
 .PHONY : backend/privilege_manager.cpp.s
 
-backend/server.obj: backend/server.cpp.obj
-.PHONY : backend/server.obj
-
-# target to build an object file
-backend/server.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/server.cpp.obj
-.PHONY : backend/server.cpp.obj
-
-backend/server.i: backend/server.cpp.i
-.PHONY : backend/server.i
-
-# target to preprocess a source file
-backend/server.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/server.cpp.i
-.PHONY : backend/server.cpp.i
-
-backend/server.s: backend/server.cpp.s
-.PHONY : backend/server.s
-
-# target to generate assembly for a file
-backend/server.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/server.cpp.s
-.PHONY : backend/server.cpp.s
-
 backend/utils.obj: backend/utils.cpp.obj
 .PHONY : backend/utils.obj
 
@@ -305,12 +233,6 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... Belzebub
-	@echo ... backend/ct_parser.obj
-	@echo ... backend/ct_parser.i
-	@echo ... backend/ct_parser.s
-	@echo ... backend/driver_manager.obj
-	@echo ... backend/driver_manager.i
-	@echo ... backend/driver_manager.s
 	@echo ... backend/injection_engine.obj
 	@echo ... backend/injection_engine.i
 	@echo ... backend/injection_engine.s
@@ -320,9 +242,6 @@ help:
 	@echo ... backend/privilege_manager.obj
 	@echo ... backend/privilege_manager.i
 	@echo ... backend/privilege_manager.s
-	@echo ... backend/server.obj
-	@echo ... backend/server.i
-	@echo ... backend/server.s
 	@echo ... backend/utils.obj
 	@echo ... backend/utils.i
 	@echo ... backend/utils.s

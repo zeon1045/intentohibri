@@ -86,26 +86,11 @@ CMakeFiles/Belzebub.dir/backend/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Belzebub.dir/backend/main.cpp.s"
 	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\mosta\Desktop\intentogibrido\backend\main.cpp -o CMakeFiles\Belzebub.dir\backend\main.cpp.s
 
-CMakeFiles/Belzebub.dir/backend/server.cpp.obj: CMakeFiles/Belzebub.dir/flags.make
-CMakeFiles/Belzebub.dir/backend/server.cpp.obj: CMakeFiles/Belzebub.dir/includes_CXX.rsp
-CMakeFiles/Belzebub.dir/backend/server.cpp.obj: C:/Users/mosta/Desktop/intentogibrido/backend/server.cpp
-CMakeFiles/Belzebub.dir/backend/server.cpp.obj: CMakeFiles/Belzebub.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Belzebub.dir/backend/server.cpp.obj"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Belzebub.dir/backend/server.cpp.obj -MF CMakeFiles\Belzebub.dir\backend\server.cpp.obj.d -o CMakeFiles\Belzebub.dir\backend\server.cpp.obj -c C:\Users\mosta\Desktop\intentogibrido\backend\server.cpp
-
-CMakeFiles/Belzebub.dir/backend/server.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/Belzebub.dir/backend/server.cpp.i"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\mosta\Desktop\intentogibrido\backend\server.cpp > CMakeFiles\Belzebub.dir\backend\server.cpp.i
-
-CMakeFiles/Belzebub.dir/backend/server.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Belzebub.dir/backend/server.cpp.s"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\mosta\Desktop\intentogibrido\backend\server.cpp -o CMakeFiles\Belzebub.dir\backend\server.cpp.s
-
 CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj: CMakeFiles/Belzebub.dir/flags.make
 CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj: CMakeFiles/Belzebub.dir/includes_CXX.rsp
 CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj: C:/Users/mosta/Desktop/intentogibrido/backend/injection_engine.cpp
 CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj: CMakeFiles/Belzebub.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj"
 	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj -MF CMakeFiles\Belzebub.dir\backend\injection_engine.cpp.obj.d -o CMakeFiles\Belzebub.dir\backend\injection_engine.cpp.obj -c C:\Users\mosta\Desktop\intentogibrido\backend\injection_engine.cpp
 
 CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.i: cmake_force
@@ -116,41 +101,11 @@ CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.s"
 	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\mosta\Desktop\intentogibrido\backend\injection_engine.cpp -o CMakeFiles\Belzebub.dir\backend\injection_engine.cpp.s
 
-CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj: CMakeFiles/Belzebub.dir/flags.make
-CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj: CMakeFiles/Belzebub.dir/includes_CXX.rsp
-CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj: C:/Users/mosta/Desktop/intentogibrido/backend/driver_manager.cpp
-CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj: CMakeFiles/Belzebub.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj -MF CMakeFiles\Belzebub.dir\backend\driver_manager.cpp.obj.d -o CMakeFiles\Belzebub.dir\backend\driver_manager.cpp.obj -c C:\Users\mosta\Desktop\intentogibrido\backend\driver_manager.cpp
-
-CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.i"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\mosta\Desktop\intentogibrido\backend\driver_manager.cpp > CMakeFiles\Belzebub.dir\backend\driver_manager.cpp.i
-
-CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.s"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\mosta\Desktop\intentogibrido\backend\driver_manager.cpp -o CMakeFiles\Belzebub.dir\backend\driver_manager.cpp.s
-
-CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj: CMakeFiles/Belzebub.dir/flags.make
-CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj: CMakeFiles/Belzebub.dir/includes_CXX.rsp
-CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj: C:/Users/mosta/Desktop/intentogibrido/backend/ct_parser.cpp
-CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj: CMakeFiles/Belzebub.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj -MF CMakeFiles\Belzebub.dir\backend\ct_parser.cpp.obj.d -o CMakeFiles\Belzebub.dir\backend\ct_parser.cpp.obj -c C:\Users\mosta\Desktop\intentogibrido\backend\ct_parser.cpp
-
-CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.i"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\mosta\Desktop\intentogibrido\backend\ct_parser.cpp > CMakeFiles\Belzebub.dir\backend\ct_parser.cpp.i
-
-CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.s"
-	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\mosta\Desktop\intentogibrido\backend\ct_parser.cpp -o CMakeFiles\Belzebub.dir\backend\ct_parser.cpp.s
-
 CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj: CMakeFiles/Belzebub.dir/flags.make
 CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj: CMakeFiles/Belzebub.dir/includes_CXX.rsp
 CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj: C:/Users/mosta/Desktop/intentogibrido/backend/privilege_manager.cpp
 CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj: CMakeFiles/Belzebub.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj"
 	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj -MF CMakeFiles\Belzebub.dir\backend\privilege_manager.cpp.obj.d -o CMakeFiles\Belzebub.dir\backend\privilege_manager.cpp.obj -c C:\Users\mosta\Desktop\intentogibrido\backend\privilege_manager.cpp
 
 CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.i: cmake_force
@@ -165,7 +120,7 @@ CMakeFiles/Belzebub.dir/backend/utils.cpp.obj: CMakeFiles/Belzebub.dir/flags.mak
 CMakeFiles/Belzebub.dir/backend/utils.cpp.obj: CMakeFiles/Belzebub.dir/includes_CXX.rsp
 CMakeFiles/Belzebub.dir/backend/utils.cpp.obj: C:/Users/mosta/Desktop/intentogibrido/backend/utils.cpp
 CMakeFiles/Belzebub.dir/backend/utils.cpp.obj: CMakeFiles/Belzebub.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/Belzebub.dir/backend/utils.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Belzebub.dir/backend/utils.cpp.obj"
 	C:\msys64\mingw64\bin\g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/Belzebub.dir/backend/utils.cpp.obj -MF CMakeFiles\Belzebub.dir\backend\utils.cpp.obj.d -o CMakeFiles\Belzebub.dir\backend\utils.cpp.obj -c C:\Users\mosta\Desktop\intentogibrido\backend\utils.cpp
 
 CMakeFiles/Belzebub.dir/backend/utils.cpp.i: cmake_force
@@ -179,10 +134,7 @@ CMakeFiles/Belzebub.dir/backend/utils.cpp.s: cmake_force
 # Object files for target Belzebub
 Belzebub_OBJECTS = \
 "CMakeFiles/Belzebub.dir/backend/main.cpp.obj" \
-"CMakeFiles/Belzebub.dir/backend/server.cpp.obj" \
 "CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj" \
-"CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj" \
-"CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj" \
 "CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj" \
 "CMakeFiles/Belzebub.dir/backend/utils.cpp.obj"
 
@@ -190,19 +142,14 @@ Belzebub_OBJECTS = \
 Belzebub_EXTERNAL_OBJECTS =
 
 Belzebub.exe: CMakeFiles/Belzebub.dir/backend/main.cpp.obj
-Belzebub.exe: CMakeFiles/Belzebub.dir/backend/server.cpp.obj
 Belzebub.exe: CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj
-Belzebub.exe: CMakeFiles/Belzebub.dir/backend/driver_manager.cpp.obj
-Belzebub.exe: CMakeFiles/Belzebub.dir/backend/ct_parser.cpp.obj
 Belzebub.exe: CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj
 Belzebub.exe: CMakeFiles/Belzebub.dir/backend/utils.cpp.obj
 Belzebub.exe: CMakeFiles/Belzebub.dir/build.make
-Belzebub.exe: C:/msys64/mingw64/lib/libws2_32.a
-Belzebub.exe: C:/msys64/mingw64/lib/libntdll.a
 Belzebub.exe: CMakeFiles/Belzebub.dir/linkLibs.rsp
 Belzebub.exe: CMakeFiles/Belzebub.dir/objects1.rsp
 Belzebub.exe: CMakeFiles/Belzebub.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable Belzebub.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable Belzebub.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\Belzebub.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

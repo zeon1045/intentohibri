@@ -21,11 +21,26 @@ InjectionEngine::InjectionEngine() : currentDriver(nullptr), driverLoaded(false)
     // La inicialización ahora escanea la carpeta de drivers
     InitializeDriverDatabase(); 
     
-    // Inicializar privilegios del sistema
+    // Inicializar privilegios del sistema UNA SOLA VEZ
     std::cout << "[BELZEBUB] Inicializando motor de inyección..." << std::endl;
     bool privilegesOk = InitializeBelzebubPrivileges();
     
-    if (privilegesOk) {
+    // --- ASIGNACIÓN DIRECTA DE PRIVILEGIOS ---
+    // En lugar de solo verificar, asignamos directamente los privilegios después de InitializeBelzebubPrivileges
+    if (IsUserAdmin()) {
+        this->hasLoadDriverPrivilege = SetPrivilege(L"SeLoadDriverPrivilege", TRUE);
+        this->hasDebugPrivilege = SetPrivilege(L"SeDebugPrivilege", TRUE);
+        
+        std::cout << "[BELZEBUB] ✅ Asignación directa de privilegios completada" << std::endl;
+        std::cout << "[BELZEBUB] ✅ SeLoadDriverPrivilege: " << (this->hasLoadDriverPrivilege ? "ACTIVO" : "FALLO") << std::endl;
+        std::cout << "[BELZEBUB] ✅ SeDebugPrivilege: " << (this->hasDebugPrivilege ? "ACTIVO" : "FALLO") << std::endl;
+    } else {
+        this->hasLoadDriverPrivilege = false;
+        this->hasDebugPrivilege = false;
+        std::cout << "[BELZEBUB] ⚠️  No se ejecuta como administrador - privilegios limitados" << std::endl;
+    }
+    
+    if (this->hasLoadDriverPrivilege && this->hasDebugPrivilege) {
         std::cout << "[BELZEBUB] ✅ Motor inicializado con privilegios completos" << std::endl;
     } else {
         std::cout << "[BELZEBUB] ⚠️  Motor inicializado con privilegios limitados" << std::endl;
@@ -330,16 +345,14 @@ json InjectionEngine::GetSystemStatus() {
     json status;
     status["runningAsAdmin"] = IsUserAdmin() ? 1 : 0;
     
-    // --- LÓGICA DE PRIVILEGIOS CENTRALIZADA Y PERSISTENTE ---
-    // Intentamos obtener los privilegios UNA SOLA VEZ y guardamos el estado.
-    // NO los desactivamos después de comprobar para mantenerlos activos.
-    if (IsUserAdmin()) {
-        this->hasLoadDriverPrivilege = SetLoadDriverPrivilege(TRUE);
-        this->hasDebugPrivilege = SetPrivilege(L"SeDebugPrivilege", TRUE);
-    } else {
-        this->hasLoadDriverPrivilege = false;
-        this->hasDebugPrivilege = false;
-    }
+    // --- GESTIÓN DE PRIVILEGIOS PERSISTENTE Y CORRECTA ---
+    // Los privilegios se obtienen UNA SOLA VEZ en el constructor con InitializeBelzebubPrivileges()
+    // y se mantienen activos durante toda la ejecución del programa.
+    // NO los volvemos a activar aquí para evitar conflictos.
+    
+    // Solo verificamos el estado actual usando la función de consulta
+    this->hasLoadDriverPrivilege = IsPrivilegeEnabled(L"SeLoadDriverPrivilege");
+    this->hasDebugPrivilege = IsPrivilegeEnabled(L"SeDebugPrivilege");
     
     status["loadDriverPrivilege"] = this->hasLoadDriverPrivilege ? 1 : 0;
     status["debugPrivilege"] = this->hasDebugPrivilege ? 1 : 0;

@@ -10,6 +10,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj.d"
   "CMakeFiles/Belzebub.dir/backend/main.cpp.obj"
   "CMakeFiles/Belzebub.dir/backend/main.cpp.obj.d"
+  "CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj"
+  "CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj.d"
   "CMakeFiles/Belzebub.dir/backend/server.cpp.obj"
   "CMakeFiles/Belzebub.dir/backend/server.cpp.obj.d"
   "libBelzebub.dll.a"

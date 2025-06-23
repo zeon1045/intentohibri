@@ -485,6 +485,7 @@ CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj: \
  C:/msys64/mingw64/include/c++/15.1.0/bits/stl_numeric.h \
  C:/msys64/mingw64/include/c++/15.1.0/pstl/glue_numeric_defs.h \
  C:/msys64/mingw64/include/c++/15.1.0/any \
+ C:\Users\mosta\Desktop\intentogibrido\backend\privilege_manager.h \
  C:/msys64/mingw64/include/tlhelp32.h C:/msys64/mingw64/include/psapi.h \
  C:/msys64/mingw64/include/c++/15.1.0/iostream \
  C:/msys64/mingw64/include/c++/15.1.0/fstream \

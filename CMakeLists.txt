@@ -18,6 +18,7 @@ set(SOURCES
     backend/injection_engine.cpp
     backend/driver_manager.cpp
     backend/ct_parser.cpp
+    backend/privilege_manager.cpp
 )
 
 # Crear ejecutable

@@ -1,4 +1,5 @@
 #include "injection_engine.h"
+#include "privilege_manager.h"
 #include <windows.h>
 #include <tlhelp32.h>
 #include <psapi.h>
@@ -62,6 +63,16 @@ void CleanupExistingDriverServices(const std::string& driverPath) {
 
 InjectionEngine::InjectionEngine() : currentDriverIndex(-1) {
     InitializeDriverDatabase();
+    
+    // Inicializar privilegios del sistema
+    std::cout << "[BELZEBUB] Inicializando motor de inyección..." << std::endl;
+    bool privilegesOk = InitializeBelzebubPrivileges();
+    
+    if (privilegesOk) {
+        std::cout << "[BELZEBUB] ✅ Motor inicializado con privilegios completos" << std::endl;
+    } else {
+        std::cout << "[BELZEBUB] ⚠️  Motor inicializado con privilegios limitados" << std::endl;
+    }
 }
 
 InjectionEngine::~InjectionEngine() {
@@ -578,10 +589,10 @@ json InjectionEngine::GetSystemStatus() {
     status["serviceName"] = IsDriverLoaded() ? currentServiceName : "N/A";
     status["cheatEnginePath"] = std::filesystem::absolute("core_dlls/cheatengine-x86_64.exe").string();
     
-    // Información de privilegios y permisos
+    // Información de privilegios y permisos usando el nuevo sistema
     status["runningAsAdmin"] = IsRunningAsAdmin();
-    status["loadDriverPrivilege"] = EnablePrivilege(SE_LOAD_DRIVER_NAME);
-    status["debugPrivilege"] = EnablePrivilege(SE_DEBUG_NAME);
+    status["loadDriverPrivilege"] = IsPrivilegeEnabled(L"SeLoadDriverPrivilege");
+    status["debugPrivilege"] = IsPrivilegeEnabled(L"SeDebugPrivilege");
     
     return status;
 }

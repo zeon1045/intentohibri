@@ -113,6 +113,14 @@ int main() {
     InjectionEngine engine;
     httplib::Server svr;
 
+    // === CONFIGURACIÓN DE CORS ===
+    // Función auxiliar para añadir cabeceras CORS a todas las respuestas
+    auto add_cors_headers = [](httplib::Response& res) {
+        res.headers["Access-Control-Allow-Origin"] = "*";
+        res.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+        res.headers["Access-Control-Allow-Headers"] = "Origin, X-Requested-With, Content-Type, Accept";
+    };
+
     const char* frontend_path = "./frontend";
     auto ret = svr.set_mount_point("/", frontend_path);
     if (!ret) {
@@ -136,46 +144,56 @@ int main() {
     });
 
     // --- API Endpoints (Existentes) ---
-    svr.Get("/api/status", [&](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/status", [&add_cors_headers, &engine](const httplib::Request&, httplib::Response& res) {
+        add_cors_headers(res);
         res.set_content(engine.GetSystemStatus().dump(), "application/json; charset=utf-8");
     });
-    svr.Get("/api/drivers", [&](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/drivers", [&add_cors_headers, &engine](const httplib::Request&, httplib::Response& res) {
+        add_cors_headers(res);
         res.set_content(engine.ListAvailableDrivers().dump(), "application/json; charset=utf-8");
     });
-    svr.Get("/api/processes", [&](const httplib::Request&, httplib::Response& res) {
+    svr.Get("/api/processes", [&add_cors_headers, &engine](const httplib::Request&, httplib::Response& res) {
+        add_cors_headers(res);
         res.set_content(engine.GetProcessList().dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/load_driver", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/load_driver", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         int driverId = body["id"];
         res.set_content(engine.LoadDriver(driverId).dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/unload_driver", [&](const httplib::Request&, httplib::Response& res) {
+    svr.Post("/api/unload_driver", [&add_cors_headers, &engine](const httplib::Request&, httplib::Response& res) {
+        add_cors_headers(res);
         res.set_content(engine.UnloadDriver().dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/inject_dll", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/inject_dll", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         DWORD pid = body["pid"];
         std::string dllPath = trim_quotes(body["dllPath"]);
         res.set_content(engine.InjectDLL(pid, dllPath).dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/find_process", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/find_process", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         std::string processName = body["processName"];
         res.set_content(engine.FindProcess(processName).dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/load_ct", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/load_ct", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         DWORD pid = body["pid"];
         std::string ctPath = trim_quotes(body["ctPath"]);
         res.set_content(engine.LoadCheatTable(ctPath, pid).dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/get_ct_entries", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/get_ct_entries", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         std::string ctPath = trim_quotes(body["ctPath"]);
         res.set_content(engine.GetCheatTableEntries(ctPath).dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/control_cheat", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/control_cheat", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         DWORD pid = body["pid"];
         std::string ctPath = trim_quotes(body["ctPath"]);
@@ -183,7 +201,8 @@ int main() {
         bool activate = body["activate"];
         res.set_content(engine.ControlCheatEntry(ctPath, pid, entryId, activate).dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/set_cheat_value", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/set_cheat_value", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         DWORD pid = body["pid"];
         std::string ctPath = trim_quotes(body["ctPath"]);
@@ -191,19 +210,22 @@ int main() {
         std::string value = body["value"];
         res.set_content(engine.SetCheatEntryValue(ctPath, pid, entryId, value).dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/set_speedhack", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/set_speedhack", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         DWORD pid = body["pid"];
         float speed = body["speed"];
         res.set_content(engine.SetSpeedhack(pid, speed).dump(), "application/json; charset=utf-8");
     });
-    svr.Post("/api/get_script", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Post("/api/get_script", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         std::string ctPath = trim_quotes(body["ctPath"]);
         int entryId = body["entryId"];
         res.set_content(engine.GetCheatScript(ctPath, entryId).dump(), "application/json; charset=utf-8");
     });
-     svr.Post("/api/update_script", [&](const httplib::Request& req, httplib::Response& res) {
+     svr.Post("/api/update_script", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         auto body = json::parse(req.body);
         std::string ctPath = trim_quotes(body["ctPath"]);
         int entryId = body["entryId"];
@@ -212,7 +234,8 @@ int main() {
     });
 
     // --- NUEVO ENDPOINT PARA EL EXPLORADOR DE ARCHIVOS NATIVO ---
-    svr.Get("/api/browse-file", [&](const httplib::Request& req, httplib::Response& res) {
+    svr.Get("/api/browse-file", [&add_cors_headers](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
         std::string filter = "Todos los Archivos\0*.*\0";
         if (req.has_param("ext")) {
             auto ext = req.get_param_value("ext");

@@ -224,6 +224,30 @@ backend/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.s
 .PHONY : backend/main.cpp.s
 
+backend/privilege_manager.obj: backend/privilege_manager.cpp.obj
+.PHONY : backend/privilege_manager.obj
+
+# target to build an object file
+backend/privilege_manager.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj
+.PHONY : backend/privilege_manager.cpp.obj
+
+backend/privilege_manager.i: backend/privilege_manager.cpp.i
+.PHONY : backend/privilege_manager.i
+
+# target to preprocess a source file
+backend/privilege_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.i
+.PHONY : backend/privilege_manager.cpp.i
+
+backend/privilege_manager.s: backend/privilege_manager.cpp.s
+.PHONY : backend/privilege_manager.s
+
+# target to generate assembly for a file
+backend/privilege_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.s
+.PHONY : backend/privilege_manager.cpp.s
+
 backend/server.obj: backend/server.cpp.obj
 .PHONY : backend/server.obj
 
@@ -269,6 +293,9 @@ help:
 	@echo ... backend/main.obj
 	@echo ... backend/main.i
 	@echo ... backend/main.s
+	@echo ... backend/privilege_manager.obj
+	@echo ... backend/privilege_manager.i
+	@echo ... backend/privilege_manager.s
 	@echo ... backend/server.obj
 	@echo ... backend/server.i
 	@echo ... backend/server.s

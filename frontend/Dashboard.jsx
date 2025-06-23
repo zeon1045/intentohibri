@@ -13,14 +13,22 @@ const Dashboard = () => {
   const [messageType, setMessageType] = useState('');
 
   useEffect(() => {
-    fetch('/api/processes')
-      .then(res => res.json())
+    // URLs absolutas apuntando al puerto 12345 del backend
+    fetch('http://localhost:12345/api/processes')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Error de red: ${res.status} - ${res.statusText}`);
+        }
+        return res.json();
+      })
       .then(data => {
         setProcesses(data);
         if (data.length > 0) setSelectedProcess(data[0].pid);
       })
       .catch(err => {
-        console.error("Error cargando procesos:", err);
+        console.error("Error detallado al cargar procesos:", err);
+        setMessage('Error en API: No se pudo cargar la lista de procesos. ¿El backend está funcionando?');
+        setMessageType('error');
         setProcesses([
           { pid: 1234, name: "notepad.exe" },
           { pid: 5678, name: "explorer.exe" },
@@ -29,14 +37,19 @@ const Dashboard = () => {
         setSelectedProcess(1234);
       });
 
-    fetch('/api/drivers')
-      .then(res => res.json())
+    fetch('http://localhost:12345/api/drivers')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Error de red: ${res.status} - ${res.statusText}`);
+        }
+        return res.json();
+      })
       .then(data => {
         setDrivers(data);
         if (data.length > 0) setSelectedDriver(data[0]);
       })
       .catch(err => {
-        console.error("Error cargando drivers:", err);
+        console.error("Error detallado al cargar drivers:", err);
         setMessage("Error al cargar la lista de drivers. Revisa que existan archivos .sys en la carpeta drivers/");
         setMessageType('error');
       });
@@ -52,7 +65,7 @@ const Dashboard = () => {
     setMessage('Cargando tabla de trucos...');
     setMessageType('');
 
-    fetch('/api/upload_ct', {
+    fetch('http://localhost:12345/api/upload_ct', {
       method: 'POST',
       body: formData,
     })
@@ -91,7 +104,7 @@ const Dashboard = () => {
       cheats: activeCheats
     };
     
-    fetch('/api/apply_cheats', {
+    fetch('http://localhost:12345/api/apply_cheats', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -125,7 +138,7 @@ const Dashboard = () => {
       dllPath: dllPath
     };
     
-    fetch('/api/inject_dll', {
+    fetch('http://localhost:12345/api/inject_dll', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

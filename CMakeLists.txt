@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
-project(Belzebub)
+project(BYOVD_Professional_v3)
 
 # Usar C++17
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static") # Enlace estático para portabilidad
 
 # Incluir directorios con headers locales
@@ -22,10 +22,10 @@ set(SOURCES
 )
 
 # Crear ejecutable
-add_executable(Belzebub ${SOURCES})
+add_executable(BYOVD_Professional_v3 ${SOURCES})
 
 # Librerías de Windows necesarias para Belzebub Professional
-target_link_libraries(Belzebub
+target_link_libraries(BYOVD_Professional_v3
     ws2_32      # Para networking (httplib)
     advapi32    # Para servicios y privilegios (SCM)
     shell32     # Para APIs de Shell de Windows

@@ -46,55 +46,36 @@ using CTLoader::CTError;
 
 // Declaración de la clase InjectionEngine
 class InjectionEngine {
-private:
-    std::map<int, DriverInfo> knownDrivers;
-    DriverInfo* currentDriver;
-    bool driverLoaded;
-    std::string currentServiceName;
-    
-    // --- VARIABLES PARA ESTADO DE PRIVILEGIOS ---
-    bool hasLoadDriverPrivilege = false;
-    bool hasDebugPrivilege = false;
-
-    // --- CACHE DE CHEAT TABLES USANDO CT_LOADER ---
-    std::map<std::string, CTLoader::CheatTable> cheatTableCache;
-
-    void InitializeDriverDatabase();
-    bool CleanupService(const std::string& serviceName);
-    std::string GenerateRandomString(int length);
-    bool ExecuteLuaScript(const std::string& scriptContent, DWORD processId);
-
 public:
     InjectionEngine();
     ~InjectionEngine();
 
-    // --- GESTIÓN DE DRIVERS ---
+    json GetSystemStatus();
     json ListAvailableDrivers();
     json LoadDriver(int driverIndex);
     json UnloadDriver();
-    json GetDriverInfoJson(int driverIndex);
-    
-    // --- GESTIÓN DE PROCESOS ---
-    json FindProcess(const std::string& processName); // Se mantiene por simplicidad
-    json GetProcessList(); // NUEVA FUNCIÓN AVANZADA
-    
-    // --- FUNCIONALIDAD CHEAT ENGINE CON CT_LOADER ---
-    json InjectDLL(DWORD processId, const std::string& dllPath);
-    json SetSpeedhack(DWORD processId, float speed);
-    
-    // --- CONTROL DE CHEAT TABLE (.CT) USANDO CT_LOADER ---
-    json LoadCheatTable(const std::string& ctFilePath, DWORD processId);
+    json GetProcessList();
     json GetCheatTableEntries(const std::string& ctFilePath);
-    json ControlCheatEntry(const std::string& ctFilePath, DWORD processId, int entryId, bool activate);
-    json SetCheatEntryValue(const std::string& ctFilePath, DWORD processId, int entryId, const std::string& value);
+    
+    // Nueva función para activar/desactivar cheats
+    json ActivateCheatEntry(const std::string& ctFilePath, int entryId, bool activate);
 
-    // --- EDITOR DE SCRIPTS ---
-    json GetCheatScript(const std::string& ctFilePath, int entryId);
-    json UpdateCheatScript(const std::string& ctFilePath, int entryId, const std::string& newScript);
+    // Nueva función para establecer el proceso objetivo
+    void SelectProcess(DWORD pid);
 
-    // --- FUNCIONES DE UTILIDAD ---
-    size_t GetDriverCount() const;
-    bool IsDriverLoaded() const;
-    std::string GetCurrentDriverName() const;
-    json GetSystemStatus();
+private:
+    std::map<int, CTLoader::DriverInfo> knownDrivers;
+    const CTLoader::DriverInfo* currentDriver = nullptr;
+    std::string currentServiceName = "";
+    bool driverLoaded = false;
+    bool hasLoadDriverPrivilege = false;
+    bool hasDebugPrivilege = false;
+    DWORD targetProcessId = 0; // Guardamos el PID objetivo
+
+    std::map<std::string, CTLoader::CheatTable> cheatTableCache;
+    
+    void InitializeDriverDatabase();
+    bool CleanupService(const std::string& serviceName);
+    bool IsDriverLoaded() const { return driverLoaded; }
+    std::string GetCurrentDriverName() const { return currentDriver ? currentDriver->name : "Ninguno"; }
 };

@@ -122,10 +122,13 @@
             async get(endpoint) {
                 try {
                     const res = await fetch(`http://localhost:12345/api/${endpoint}`);
-                    if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({ message: res.statusText }));
+                        throw new Error(`API Error: ${err.message}`);
+                    }
                     return await res.json();
                 } catch (error) {
-                    console.error(`Error en GET /${endpoint}:`, error);
+                    log(`Error en GET /${endpoint}: ${error.message}`, 'error');
                     return null;
                 }
             },
@@ -136,54 +139,36 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body)
                     });
-                    if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+                     if (!res.ok) {
+                        const err = await res.json().catch(() => ({ message: res.statusText }));
+                        throw new Error(`API Error: ${err.message}`);
+                    }
                     return await res.json();
                 } catch (error) {
-                    console.error(`Error en POST /${endpoint}:`, error);
+                    log(`Error en POST /${endpoint}: ${error.message}`, 'error');
                     return null;
                 }
             }
         };
+        
+        // --- FUNCIÓN DE LOGGING ---
+        function log(message, type = 'info') {
+            // Simple console log, puede ser extendido a notificaciones visuales
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            // Aquí se podría implementar una notificación toast
+        }
 
         // --- FUNCIONES DE RENDERIZADO ---
         function renderStatus() {
             const status = state.systemStatus;
             const grid = document.getElementById('systemStatusGrid');
             grid.innerHTML = `
-                <div class="status-item">
-                    <strong>Estado del Motor</strong> 
-                    <span class="status-ok">Operativo</span>
-                </div>
-                <div class="status-item">
-                    <strong>Driver Cargado</strong> 
-                    <span class="${status.driverLoaded ? 'status-ok' : 'status-warn'}">
-                        ${status.currentDriver || 'Ninguno'}
-                    </span>
-                </div>
-                <div class="status-item">
-                    <strong>Proceso Objetivo</strong> 
-                    <span class="${state.targetPID ? 'status-ok' : 'status-warn'}">
-                        ${state.targetProcessName || 'Ninguno'}
-                    </span>
-                </div>
-                <div class="status-item">
-                    <strong>Privilegios Admin</strong> 
-                    <span class="${status.runningAsAdmin ? 'status-ok' : 'status-error'}">
-                        ${status.runningAsAdmin ? 'Activo' : 'Sin permisos'}
-                    </span>
-                </div>
-                <div class="status-item">
-                    <strong>Privilegios Driver</strong> 
-                    <span class="${status.loadDriverPrivilege ? 'status-ok' : 'status-error'}">
-                        ${status.loadDriverPrivilege ? 'Activo' : 'Sin privilegios'}
-                    </span>
-                </div>
-                <div class="status-item">
-                    <strong>Tabla de Cheats</strong> 
-                    <span class="${state.ctPath ? 'status-ok' : 'status-warn'}">
-                        ${state.ctPath ? state.ctPath.split('\\').pop().split('/').pop() : 'Ninguna'}
-                    </span>
-                </div>
+                <div class="status-item"><strong>Estado del Motor</strong><span class="status-ok">Operativo</span></div>
+                <div class="status-item"><strong>Driver Cargado</strong><span class="${status.driverLoaded ? 'status-ok' : 'status-warn'}">${status.currentDriver || 'Ninguno'}</span></div>
+                <div class="status-item"><strong>Proceso Objetivo</strong><span class="${state.targetPID ? 'status-ok' : 'status-warn'}">${state.targetProcessName || 'Ninguno'}</span></div>
+                <div class="status-item"><strong>Privilegios Admin</strong><span class="${status.runningAsAdmin ? 'status-ok' : 'status-error'}">${status.runningAsAdmin ? 'Activo' : 'Sin permisos'}</span></div>
+                <div class="status-item"><strong>Privilegios Driver</strong><span class="${status.loadDriverPrivilege ? 'status-ok' : 'status-error'}">${status.loadDriverPrivilege ? 'Activo' : 'Sin privilegios'}</span></div>
+                <div class="status-item"><strong>Tabla de Cheats</strong><span class="${state.ctPath ? 'status-ok' : 'status-warn'}">${state.ctPath ? state.ctPath.split('\\').pop().split('/').pop() : 'Ninguna'}</span></div>
             `;
         }
 
@@ -211,226 +196,173 @@
             const tableBody = document.querySelector('#processListModalTable tbody');
             tableBody.innerHTML = '';
             state.allProcesses = processes || [];
-            
             if (!processes || processes.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--error);">No se pudieron cargar los procesos</td></tr>';
                 return;
             }
-
             processes.forEach(p => {
                 const row = document.createElement('tr');
                 row.dataset.pid = p.pid;
                 row.dataset.name = p.name;
-                row.innerHTML = `
-                    <td>${p.name}</td>
-                    <td>${p.pid}</td>
-                    <td>${p.memory || 'N/A'}</td>
-                `;
+                row.innerHTML = `<td>${p.name}</td><td>${p.pid}</td><td>N/A</td>`;
                 tableBody.appendChild(row);
             });
             updateSearchStats();
-        }
-        
-        function filterProcessList() {
-            const searchTerm = document.getElementById('processSearchInput').value.toLowerCase();
-            const rows = document.querySelectorAll('#processListModalTable tbody tr');
-            let visibleCount = 0;
-            
-            rows.forEach(row => {
-                const processName = (row.dataset.name || '').toLowerCase();
-                const processPid = (row.dataset.pid || '').toString();
-                const isVisible = processName.includes(searchTerm) || processPid.includes(searchTerm);
-                row.style.display = isVisible ? '' : 'none';
-                if (isVisible) visibleCount++;
-            });
-            
-            updateSearchStats(visibleCount);
-        }
-        
-        function updateSearchStats(visibleCount = null) {
-            const stats = document.getElementById('searchStats');
-            const total = state.allProcesses.length;
-            const showing = visibleCount !== null ? visibleCount : total;
-            
-            if (showing === total) {
-                stats.textContent = `Mostrando todos los ${total} procesos`;
-            } else {
-                stats.textContent = `Mostrando ${showing} de ${total} procesos`;
-            }
         }
         
         function renderCheatEntries(entries) {
             const list = document.getElementById('cheatEntries');
             list.innerHTML = '';
             if (!entries || entries.length === 0) {
-                list.innerHTML = '<li style="color: var(--text-muted);">Cargue una tabla válida para ver las entradas.</li>';
+                list.innerHTML = '<li>Cargue o seleccione una tabla válida para ver las entradas.</li>';
                 return;
             }
-            entries.forEach((entry, index) => {
+            entries.forEach(entry => {
                 const li = document.createElement('li');
                 li.className = 'cheat-entry-item';
                 li.innerHTML = `
-                    <span>${entry.description || `Entrada ${index + 1}`}</span>
-                    <input type="checkbox" class="cheat-toggle" data-entry-id="${entry.id || index}">
+                    <div class="cheat-info">
+                        <strong class="cheat-desc">${entry.description}</strong>
+                        <span class="cheat-details">Tipo: ${entry.type} | Addr: ${entry.address}</span>
+                    </div>
+                    <input type="checkbox" class="cheat-toggle" data-entry-id="${entry.id}">
                 `;
                 list.appendChild(li);
             });
         }
 
-        // --- FUNCIONES DE ESTADO ---
-        async function updateFullStatus() {
+        function filterProcessList() {
+            const searchTerm = document.getElementById('processSearchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#processListModalTable tbody tr');
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const isVisible = (row.dataset.name || '').toLowerCase().includes(searchTerm) || (row.dataset.pid || '').includes(searchTerm);
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
+            });
+            updateSearchStats(visibleCount);
+        }
+        
+        function updateSearchStats(visibleCount = null) {
+            const total = state.allProcesses.length;
+            const statsEl = document.getElementById('searchStats');
+            if (visibleCount === null) {
+                statsEl.textContent = `Mostrando ${total} procesos.`;
+            } else {
+                statsEl.textContent = `Mostrando ${visibleCount} de ${total} procesos.`;
+            }
+        }
+
+        // --- SETUP DE EVENTOS ---
+        async function setupEventListeners() {
+            document.getElementById('loadDriverBtn').addEventListener('click', async () => {
+                if (state.selectedDriverId === null) {
+                    log('Por favor, selecciona un driver de la lista.', 'error');
+                    return;
+                }
+                const res = await API.post('load_driver', { id: state.selectedDriverId });
+                if (res) log(res.message, res.success ? 'success' : 'error');
+                refreshStatus();
+            });
+
+            document.getElementById('unloadDriverBtn').addEventListener('click', async () => {
+                const res = await API.post('unload_driver', {});
+                if (res) log(res.message, res.success ? 'success' : 'error');
+                refreshStatus();
+            });
+
+            document.getElementById('openProcessModalBtn').addEventListener('click', async () => {
+                const res = await API.get('processes');
+                if (res && res.success) {
+                    renderProcessModal(res.processes);
+                }
+                document.getElementById('processModal').style.display = 'flex';
+            });
+            
+            document.getElementById('closeProcessModalBtn').addEventListener('click', () => document.getElementById('processModal').style.display = 'none');
+            document.getElementById('processSearchInput').addEventListener('input', filterProcessList);
+
+            document.getElementById('processListModalTable').addEventListener('click', async (e) => {
+                const row = e.target.closest('tr');
+                if (!row || !row.dataset.pid) return;
+
+                state.targetPID = parseInt(row.dataset.pid, 10);
+                state.targetProcessName = row.dataset.name;
+
+                const res = await API.post('select_process', { pid: state.targetPID });
+                if(res) log(res.message, res.success ? 'success' : 'error');
+
+                document.getElementById('selectedProcessDisplay').textContent = `${state.targetProcessName} (PID: ${state.targetPID})`;
+                document.getElementById('selectedProcessDisplay').className = 'status-ok';
+                document.getElementById('processModal').style.display = 'none';
+                renderStatus();
+            });
+            
+            const ctPathLabel = document.querySelector('label[for="ctPathInput"]');
+            ctPathLabel.addEventListener('click', async () => {
+                const res = await API.get('open_file_dialog');
+                if (res && res.success) {
+                    state.ctPath = res.path;
+                    log(`Tabla de cheats seleccionada: ${state.ctPath}`, 'info');
+                    const entriesRes = await API.post('get_ct_entries', { ctPath: state.ctPath });
+                    if (entriesRes && entriesRes.success) {
+                        renderCheatEntries(entriesRes.entries);
+                    } else {
+                         log(entriesRes ? entriesRes.message : 'Error al cargar entradas.', 'error');
+                         renderCheatEntries([]);
+                    }
+                    renderStatus();
+                } else {
+                    log(res ? res.message : 'No se seleccionó archivo.', 'warn');
+                }
+            });
+
+            document.getElementById('cheatEntries').addEventListener('change', async (e) => {
+                if (e.target.classList.contains('cheat-toggle')) {
+                    if (!state.targetPID) {
+                        log('Selecciona un proceso objetivo antes de activar un cheat.', 'error');
+                        e.target.checked = false;
+                        return;
+                    }
+                    const entryId = e.target.dataset.entryId;
+                    const activate = e.target.checked;
+                    log(`${activate ? 'Activando' : 'Desactivando'} cheat ID: ${entryId}...`);
+                    
+                    const res = await API.post('activate_cheat', {
+                        ctPath: state.ctPath,
+                        entryId: parseInt(entryId, 10),
+                        activate: activate
+                    });
+
+                    if (res) log(res.message, res.success ? 'success' : 'error');
+                    if (res && !res.success) {
+                        e.target.checked = !activate;
+                    }
+                }
+            });
+        }
+
+        // --- INICIALIZACIÓN ---
+        async function refreshStatus() {
             const status = await API.get('status');
             if (status) {
                 state.systemStatus = status;
                 renderStatus();
             }
         }
-
-        // --- CONFIGURACIÓN DE EVENT LISTENERS ---
-        function setupEventListeners() {
-            // Modal de procesos
-            document.getElementById('openProcessModalBtn').onclick = async () => {
-                const modal = document.getElementById('processModal');
-                modal.style.display = 'flex';
-                document.getElementById('processSearchInput').focus();
-                
-                const res = await API.get('processes');
-                if (res && res.processes) {
-                    renderProcessModal(res.processes);
-                }
-            };
-
-            document.getElementById('closeProcessModalBtn').onclick = () => {
-                document.getElementById('processModal').style.display = 'none';
-            };
-
-            // Búsqueda de procesos
-            document.getElementById('processSearchInput').oninput = filterProcessList;
-
-            // Selección de proceso por doble clic
-            document.querySelector('#processListModalTable tbody').ondblclick = (e) => {
-                const row = e.target.closest('tr');
-                if (!row || !row.dataset.pid) return;
-                
-                state.targetPID = parseInt(row.dataset.pid);
-                state.targetProcessName = row.dataset.name;
-                
-                document.getElementById('selectedProcessDisplay').innerHTML = `
-                    <strong>${state.targetProcessName}</strong><br>
-                    <small>PID: ${state.targetPID}</small>
-                `;
-                document.getElementById('selectedProcessDisplay').className = 'status-ok';
-                
-                updateFullStatus();
-                document.getElementById('processModal').style.display = 'none';
-            };
-
-            // Gestión de drivers
-            document.getElementById('loadDriverBtn').onclick = async () => {
-                if (state.selectedDriverId === null) {
-                    alert('Por favor, selecciona un driver primero.');
-                    return;
-                }
-                const result = await API.post('load_driver', { id: state.selectedDriverId });
-                if (result && result.success) {
-                    await updateFullStatus();
-                } else {
-                    alert('Error al cargar el driver: ' + (result?.message || 'Error desconocido'));
-                }
-            };
-            
-            document.getElementById('unloadDriverBtn').onclick = async () => {
-                const result = await API.post('unload_driver', {});
-                if (result) {
-                    await updateFullStatus();
-                }
-            };
-
-            // Gestión de archivos .CT
-            document.getElementById('ctPathInput').onchange = async (event) => {
-                const fileInput = event.target;
-                if (!fileInput.files || fileInput.files.length === 0) return;
-                
-                const file = fileInput.files[0];
-                state.ctPath = file.name; // En web usamos el nombre del archivo
-                
-                // Para web, necesitamos leer el archivo y enviarlo como contenido
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const res = await API.post('get_ct_entries', { 
-                        ctPath: file.name,
-                        content: e.target.result
-                    });
-                    if (res && res.success) {
-                        renderCheatEntries(res.entries);
-                    } else {
-                        renderCheatEntries([]);
-                        alert('Error al cargar el archivo .CT: ' + (res?.message || 'Formato no válido'));
-                    }
-                    updateFullStatus();
-                };
-                reader.readAsText(file);
-            };
-
-            // Manejo de checkboxes de cheats
-            document.getElementById('cheatEntries').onclick = async (e) => {
-                if (e.target.classList.contains('cheat-toggle')) {
-                    const entryId = e.target.dataset.entryId;
-                    const isActive = e.target.checked;
-                    
-                    if (!state.targetPID) {
-                        alert('Por favor, selecciona un proceso objetivo primero.');
-                        e.target.checked = false;
-                        return;
-                    }
-                    
-                    const result = await API.post('control_cheat', {
-                        ctPath: state.ctPath,
-                        processId: state.targetPID,
-                        entryId: parseInt(entryId),
-                        activate: isActive
-                    });
-                    
-                    if (!result || !result.success) {
-                        alert('Error al controlar el cheat: ' + (result?.message || 'Error desconocido'));
-                        e.target.checked = !isActive; // Revertir el cambio
-                    }
-                }
-            };
-
-            // Cerrar modal con Escape
-            document.onkeydown = (e) => {
-                if (e.key === 'Escape') {
-                    document.getElementById('processModal').style.display = 'none';
-                }
-            };
-        }
-
-        // --- INICIALIZACIÓN ---
-        async function initialize() {
-            console.log('🔥 Inicializando Belzebub Professional Suite...');
-            
-            setupEventListeners();
-            await updateFullStatus();
-            
+        
+        async function init() {
+            await refreshStatus();
             const drivers = await API.get('drivers');
-            if (drivers) {
+            if(drivers) {
                 state.drivers = drivers;
                 renderDrivers(drivers);
             }
-            
-            // Actualización periódica del estado
-            setInterval(updateFullStatus, 30000); // Cada 30 segundos
-            
-            console.log('✅ Belzebub inicializado correctamente.');
+            setupEventListeners();
+            setInterval(refreshStatus, 5000); // Actualiza el estado cada 5 segundos
         }
 
-        // Iniciar cuando la página esté lista
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initialize);
-        } else {
-            initialize();
-        }
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>

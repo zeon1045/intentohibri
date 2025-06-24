@@ -206,9 +206,14 @@ int main() {
     });
     svr.Post("/api/get_ct_entries", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
         add_cors_headers(res);
-        auto body = json::parse(req.body);
-        std::string ctPath = trim_quotes(body["ctPath"]);
-        res.set_content(engine.GetCheatTableEntries(ctPath).dump(), "application/json; charset=utf-8");
+        try {
+            auto body = json::parse(req.body);
+            std::string ctPath = body["ctPath"];
+            res.set_content(engine.GetCheatTableEntries(ctPath).dump(), "application/json; charset=utf-8");
+        } catch (const json::exception& e) {
+            res.status = 400;
+            res.set_content("{\"success\": false, \"message\": \"Error de JSON: " + std::string(e.what()) + "\"}", "application/json; charset=utf-8");
+        }
     });
     svr.Post("/api/control_cheat", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
         add_cors_headers(res);
@@ -268,6 +273,49 @@ int main() {
         if (!path.empty()) {
             result["success"] = true;
             result["path"] = path;
+        } else {
+            result["success"] = false;
+            result["message"] = "Dialogo cancelado por el usuario.";
+        }
+        res.set_content(result.dump(), "application/json; charset=utf-8");
+    });
+
+    // Endpoint para seleccionar el proceso objetivo
+    svr.Post("/api/select_process", [&](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
+        try {
+            auto j = json::parse(req.body);
+            DWORD pid = j.at("pid");
+            engine.SelectProcess(pid);
+            res.set_content("{\"success\": true, \"message\": \"Proceso seleccionado\"}", "application/json");
+        } catch (const json::exception& e) {
+            res.status = 400;
+            res.set_content("{\"success\": false, \"message\": \"JSON invalido\"}", "application/json");
+        }
+    });
+
+    // Endpoint para activar/desactivar cheats
+    svr.Post("/api/activate_cheat", [&](const httplib::Request& req, httplib::Response& res) {
+        add_cors_headers(res);
+        try {
+            auto j = json::parse(req.body);
+            std::string ctPath = j.at("ctPath");
+            int entryId = j.at("entryId");
+            bool activate = j.at("activate");
+            res.set_content(engine.ActivateCheatEntry(ctPath, entryId, activate).dump(), "application/json");
+        } catch (const json::exception& e) {
+            res.status = 400;
+            res.set_content("{\"success\": false, \"message\": \"JSON invalido\"}", "application/json");
+        }
+    });
+
+    svr.Get("/api/open_file_dialog", [&](const httplib::Request&, httplib::Response& res) {
+        add_cors_headers(res);
+        std::string filePath = open_file_dialog("Cheat Tables (*.ct)\0*.ct\0Todos los Archivos (*.*)\0*.*\0");
+        json result;
+        if (!filePath.empty()) {
+            result["success"] = true;
+            result["path"] = filePath;
         } else {
             result["success"] = false;
             result["message"] = "Dialogo cancelado por el usuario.";

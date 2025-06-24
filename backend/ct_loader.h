@@ -52,6 +52,7 @@ namespace CTLoader {
         CTParser() {}
         
         bool loadFromFile(const std::string& filePath);
+        bool loadFromString(const std::string& content);
         bool parseXML();
         CheatTable& getTable() { return table; }
         

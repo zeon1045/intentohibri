@@ -217,6 +217,17 @@ bool CTParser::loadFromFile(const std::string& filePath) {
     return parseXML();
 }
 
+bool CTParser::loadFromString(const std::string& content) {
+    xmlContent = content;
+    
+    if (!XMLUtils::isValidXML(xmlContent)) {
+        std::cerr << "Error: Contenido XML inválido" << std::endl;
+        return false;
+    }
+    
+    return parseXML();
+}
+
 bool CTParser::parseXML() {
     if (xmlContent.empty()) return false;
     

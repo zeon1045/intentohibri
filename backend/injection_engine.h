@@ -56,6 +56,7 @@ public:
     json UnloadDriver();
     json GetProcessList();
     json GetCheatTableEntries(const std::string& ctFilePath);
+    json GetCheatTableEntriesFromContent(const std::string& ctContent);
     
     // Nueva función para activar/desactivar cheats
     json ActivateCheatEntry(const std::string& ctFilePath, int entryId, bool activate);
@@ -64,8 +65,8 @@ public:
     void SelectProcess(DWORD pid);
 
 private:
-    std::map<int, CTLoader::DriverInfo> knownDrivers;
-    const CTLoader::DriverInfo* currentDriver = nullptr;
+    std::map<int, DriverInfo> knownDrivers;
+    const DriverInfo* currentDriver = nullptr;
     std::string currentServiceName = "";
     bool driverLoaded = false;
     bool hasLoadDriverPrivilege = false;

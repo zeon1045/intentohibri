@@ -184,6 +184,7 @@ int main() {
         add_cors_headers(res);
         res.set_content(engine.UnloadDriver().dump(), "application/json; charset=utf-8");
     });
+    /*
     svr.Post("/api/inject_dll", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
         add_cors_headers(res);
         auto body = json::parse(req.body);
@@ -204,17 +205,14 @@ int main() {
         std::string ctPath = trim_quotes(body["ctPath"]);
         res.set_content(engine.LoadCheatTable(ctPath, pid).dump(), "application/json; charset=utf-8");
     });
+    */
     svr.Post("/api/get_ct_entries", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
         add_cors_headers(res);
-        try {
-            auto body = json::parse(req.body);
-            std::string ctPath = body["ctPath"];
-            res.set_content(engine.GetCheatTableEntries(ctPath).dump(), "application/json; charset=utf-8");
-        } catch (const json::exception& e) {
-            res.status = 400;
-            res.set_content("{\"success\": false, \"message\": \"Error de JSON: " + std::string(e.what()) + "\"}", "application/json; charset=utf-8");
-        }
+        // La petición ahora envía el contenido del archivo en el cuerpo (body)
+        std::cout << "[HTTP] Recibido contenido de tabla CT para parsear." << std::endl;
+        res.set_content(engine.GetCheatTableEntriesFromContent(req.body).dump(), "application/json; charset=utf-8");
     });
+    /*
     svr.Post("/api/control_cheat", [&add_cors_headers, &engine](const httplib::Request& req, httplib::Response& res) {
         add_cors_headers(res);
         auto body = json::parse(req.body);
@@ -255,6 +253,7 @@ int main() {
         std::string script = body["script"];
         res.set_content(engine.UpdateCheatScript(ctPath, entryId, script).dump(), "application/json; charset=utf-8");
     });
+    */
 
     // --- NUEVO ENDPOINT PARA EL EXPLORADOR DE ARCHIVOS NATIVO ---
     svr.Get("/api/browse-file", [&add_cors_headers](const httplib::Request& req, httplib::Response& res) {

@@ -1,3 +1,0 @@
-C:\msys64\mingw64\bin\cmake.exe -E rm -f CMakeFiles\Belzebub.dir/objects.a
-C:\msys64\mingw64\bin\ar.exe qc CMakeFiles\Belzebub.dir/objects.a @CMakeFiles\Belzebub.dir\objects1.rsp
-C:\msys64\mingw64\bin\g++.exe  -static -Wl,--whole-archive CMakeFiles\Belzebub.dir/objects.a -Wl,--no-whole-archive -o Belzebub.exe -Wl,--out-implib,libBelzebub.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\Belzebub.dir\linkLibs.rsp

@@ -90,7 +90,7 @@ void InjectionEngine::InitializeDriverDatabase() {
             int driver_arch = get_file_architecture(file_path);
             
             if (driver_arch == os_arch) {
-                CTLoader::DriverInfo info; // Usando la estructura de CTLoader
+                DriverInfo info; // Usando la estructura local
                 info.name = filename;
                 info.filename = filename;
                 info.architecture = driver_arch;
@@ -301,19 +301,18 @@ json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
     }
     
     CTLoader::CTParser parser;
-    CTLoader::CheatTable table;
-    CTLoader::CTError result = parser.parse(ctFilePath, table);
-
-    if (result != CTLoader::CT_SUCCESS) {
-        return {{"success", false}, {"message", "Formato no compatible. Parser_Error: " + std::string(CTLoader::getErrorString(result))}};
+    if (!parser.loadFromFile(ctFilePath)) {
+        return {{"success", false}, {"message", "Error al cargar el archivo .CT."}};
     }
 
+    CTLoader::CheatTable& table = parser.getTable();
     cheatTableCache[ctFilePath] = table;
     
     json j_entries = json::array();
-    for (const auto& entry : table.entries) {
+    for (size_t i = 0; i < table.entries.size(); i++) {
+        const auto& entry = table.entries[i];
         j_entries.push_back({
-            {"id", entry.id},
+            {"id", i},
             {"description", entry.description},
             {"type", entry.type},
             {"address", entry.address},
@@ -321,6 +320,35 @@ json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
         });
     }
 
+    std::cout << "[CT] Archivo cargado exitosamente. " << table.entries.size() << " entradas encontradas." << std::endl;
+    return {{"success", true}, {"entries", j_entries}};
+}
+
+json InjectionEngine::GetCheatTableEntriesFromContent(const std::string& ctContent) {
+    if (ctContent.empty()) {
+        return {{"success", false}, {"message", "El contenido de la tabla .CT esta vacio."}};
+    }
+    
+    CTLoader::CTParser parser;
+    if (!parser.loadFromString(ctContent)) {
+        return {{"success", false}, {"message", "Error al parsear el contenido .CT."}};
+    }
+
+    CTLoader::CheatTable& table = parser.getTable();
+    
+    json j_entries = json::array();
+    for (size_t i = 0; i < table.entries.size(); i++) {
+        const auto& entry = table.entries[i];
+        j_entries.push_back({
+            {"id", i},
+            {"description", entry.description},
+            {"type", entry.type},
+            {"address", entry.address},
+            {"value", entry.value}
+        });
+    }
+
+    std::cout << "[CT] Parseo de contenido exitoso. " << table.entries.size() << " entradas encontradas." << std::endl;
     return {{"success", true}, {"entries", j_entries}};
 }
 
@@ -333,27 +361,21 @@ json InjectionEngine::ActivateCheatEntry(const std::string& ctFilePath, int entr
     }
 
     auto& table = cheatTableCache[ctFilePath];
-    CTLoader::MemoryEntry* targetEntry = nullptr;
-    for (auto& entry : table.entries) {
-        if (entry.id == entryId) {
-            targetEntry = &entry;
-            break;
-        }
+    if (entryId < 0 || entryId >= static_cast<int>(table.entries.size())) {
+        return {{"success", false}, {"message", "ID de entrada no válido."}};
     }
 
-    if (!targetEntry) {
-        return {{"success", false}, {"message", "ID de entrada no encontrado."}};
-    }
+    CTLoader::MemoryEntry& targetEntry = table.entries[entryId];
 
-    if (targetEntry->type != "Auto Assembler Script") {
-        std::cout << "Activando entrada de tipo simple: " << targetEntry->description << std::endl;
+    if (targetEntry.type != "Auto Assembler Script") {
+        std::cout << "Activando entrada de tipo simple: " << targetEntry.description << std::endl;
         return {{"success", false}, {"message", "La escritura de memoria para tipos simples aun no esta implementada."}};
     } else {
-        std::cout << "Activando entrada de Auto-Ensamblador: " << targetEntry->description << std::endl;
+        std::cout << "Activando entrada de Auto-Ensamblador: " << targetEntry.description << std::endl;
         return {{"success", false}, {"message", "La ejecucion de scripts de Auto-Ensamblador no esta implementada."}};
     }
     
-    targetEntry->enabled = activate;
+    targetEntry.enabled = activate;
     return {{"success", true}, {"message", "Estado de la entrada actualizado (simulado)."}};
 }
 

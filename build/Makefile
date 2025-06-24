@@ -116,24 +116,24 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named Belzebub
+# Target rules for targets named BYOVD_Professional_v3
 
 # Build rule for target.
-Belzebub: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 Belzebub
-.PHONY : Belzebub
+BYOVD_Professional_v3: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 BYOVD_Professional_v3
+.PHONY : BYOVD_Professional_v3
 
 # fast build rule for target.
-Belzebub/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/build
-.PHONY : Belzebub/fast
+BYOVD_Professional_v3/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/build
+.PHONY : BYOVD_Professional_v3/fast
 
 backend/ct_loader.obj: backend/ct_loader.cpp.obj
 .PHONY : backend/ct_loader.obj
 
 # target to build an object file
 backend/ct_loader.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_loader.cpp.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/ct_loader.cpp.obj
 .PHONY : backend/ct_loader.cpp.obj
 
 backend/ct_loader.i: backend/ct_loader.cpp.i
@@ -141,7 +141,7 @@ backend/ct_loader.i: backend/ct_loader.cpp.i
 
 # target to preprocess a source file
 backend/ct_loader.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_loader.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/ct_loader.cpp.i
 .PHONY : backend/ct_loader.cpp.i
 
 backend/ct_loader.s: backend/ct_loader.cpp.s
@@ -149,7 +149,7 @@ backend/ct_loader.s: backend/ct_loader.cpp.s
 
 # target to generate assembly for a file
 backend/ct_loader.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/ct_loader.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/ct_loader.cpp.s
 .PHONY : backend/ct_loader.cpp.s
 
 backend/injection_engine.obj: backend/injection_engine.cpp.obj
@@ -157,7 +157,7 @@ backend/injection_engine.obj: backend/injection_engine.cpp.obj
 
 # target to build an object file
 backend/injection_engine.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/injection_engine.cpp.obj
 .PHONY : backend/injection_engine.cpp.obj
 
 backend/injection_engine.i: backend/injection_engine.cpp.i
@@ -165,7 +165,7 @@ backend/injection_engine.i: backend/injection_engine.cpp.i
 
 # target to preprocess a source file
 backend/injection_engine.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/injection_engine.cpp.i
 .PHONY : backend/injection_engine.cpp.i
 
 backend/injection_engine.s: backend/injection_engine.cpp.s
@@ -173,7 +173,7 @@ backend/injection_engine.s: backend/injection_engine.cpp.s
 
 # target to generate assembly for a file
 backend/injection_engine.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/injection_engine.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/injection_engine.cpp.s
 .PHONY : backend/injection_engine.cpp.s
 
 backend/main.obj: backend/main.cpp.obj
@@ -181,7 +181,7 @@ backend/main.obj: backend/main.cpp.obj
 
 # target to build an object file
 backend/main.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/main.cpp.obj
 .PHONY : backend/main.cpp.obj
 
 backend/main.i: backend/main.cpp.i
@@ -189,7 +189,7 @@ backend/main.i: backend/main.cpp.i
 
 # target to preprocess a source file
 backend/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/main.cpp.i
 .PHONY : backend/main.cpp.i
 
 backend/main.s: backend/main.cpp.s
@@ -197,7 +197,7 @@ backend/main.s: backend/main.cpp.s
 
 # target to generate assembly for a file
 backend/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/main.cpp.s
 .PHONY : backend/main.cpp.s
 
 backend/privilege_manager.obj: backend/privilege_manager.cpp.obj
@@ -205,7 +205,7 @@ backend/privilege_manager.obj: backend/privilege_manager.cpp.obj
 
 # target to build an object file
 backend/privilege_manager.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/privilege_manager.cpp.obj
 .PHONY : backend/privilege_manager.cpp.obj
 
 backend/privilege_manager.i: backend/privilege_manager.cpp.i
@@ -213,7 +213,7 @@ backend/privilege_manager.i: backend/privilege_manager.cpp.i
 
 # target to preprocess a source file
 backend/privilege_manager.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/privilege_manager.cpp.i
 .PHONY : backend/privilege_manager.cpp.i
 
 backend/privilege_manager.s: backend/privilege_manager.cpp.s
@@ -221,7 +221,7 @@ backend/privilege_manager.s: backend/privilege_manager.cpp.s
 
 # target to generate assembly for a file
 backend/privilege_manager.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/privilege_manager.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/privilege_manager.cpp.s
 .PHONY : backend/privilege_manager.cpp.s
 
 backend/utils.obj: backend/utils.cpp.obj
@@ -229,7 +229,7 @@ backend/utils.obj: backend/utils.cpp.obj
 
 # target to build an object file
 backend/utils.cpp.obj:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/utils.cpp.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/utils.cpp.obj
 .PHONY : backend/utils.cpp.obj
 
 backend/utils.i: backend/utils.cpp.i
@@ -237,7 +237,7 @@ backend/utils.i: backend/utils.cpp.i
 
 # target to preprocess a source file
 backend/utils.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/utils.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/utils.cpp.i
 .PHONY : backend/utils.cpp.i
 
 backend/utils.s: backend/utils.cpp.s
@@ -245,7 +245,7 @@ backend/utils.s: backend/utils.cpp.s
 
 # target to generate assembly for a file
 backend/utils.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub.dir\build.make CMakeFiles/Belzebub.dir/backend/utils.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/backend/utils.cpp.s
 .PHONY : backend/utils.cpp.s
 
 # Help Target
@@ -256,7 +256,7 @@ help:
 	@echo ... depend
 	@echo ... edit_cache
 	@echo ... rebuild_cache
-	@echo ... Belzebub
+	@echo ... BYOVD_Professional_v3
 	@echo ... backend/ct_loader.obj
 	@echo ... backend/ct_loader.i
 	@echo ... backend/ct_loader.s

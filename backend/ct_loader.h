@@ -8,8 +8,20 @@
 
 namespace CTLoader {
     
+    // Códigos de error
+    enum CTError {
+        CT_SUCCESS = 0,
+        CT_FILE_NOT_FOUND,
+        CT_INVALID_XML,
+        CT_PARSE_ERROR,
+        CT_SCRIPT_ERROR,
+        CT_MEMORY_ERROR,
+        CT_PROCESS_ERROR
+    };
+    
     // Estructura para manejar entradas de memoria de .ct
     struct MemoryEntry {
+        int id = 0;  // ID de la entrada (añadido)
         std::string description;
         std::string address;
         std::string type;
@@ -42,14 +54,20 @@ namespace CTLoader {
         std::string xmlContent;
         CheatTable table;
         
-        std::string extractTextBetween(const std::string& content, const std::string& start, const std::string& end);
         std::vector<std::string> findAllBetween(const std::string& content, const std::string& start, const std::string& end);
         MemoryEntry parseMemoryEntry(const std::string& entryXml);
         LuaScript parseLuaScript(const std::string& scriptXml);
         std::string decodeBase64(const std::string& encoded);
         
+        // Función de ayuda recursiva para parsear entradas anidadas
+        void parseEntriesRecursive(const std::string& block, std::vector<MemoryEntry>& entries);
+        
     public:
         CTParser() {}
+        
+        // --- FIRMAS DE FUNCIONES MODIFICADAS ---
+        CTError parse(const std::string& filename, CheatTable& out_table);
+        CTError parseFromString(const std::string& content, CheatTable& out_table);
         
         bool loadFromFile(const std::string& filePath);
         bool loadFromString(const std::string& content);
@@ -113,16 +131,8 @@ namespace CTLoader {
         int getTypeSize(const std::string& type);
     }
     
-    // Códigos de error
-    enum CTError {
-        CT_SUCCESS = 0,
-        CT_FILE_NOT_FOUND,
-        CT_INVALID_XML,
-        CT_PARSE_ERROR,
-        CT_SCRIPT_ERROR,
-        CT_MEMORY_ERROR,
-        CT_PROCESS_ERROR
-    };
+    // Función independiente para extraer texto entre delimitadores
+    std::string extractTextBetween(const std::string& content, const std::string& start, const std::string& end);
     
     const char* getErrorString(CTError error);
 } 

@@ -1,3 +1,0 @@
-C:\msys64\mingw64\bin\cmake.exe -E rm -f CMakeFiles\BYOVD_Professional_v3.dir/objects.a
-C:\msys64\mingw64\bin\ar.exe qc CMakeFiles\BYOVD_Professional_v3.dir/objects.a @CMakeFiles\BYOVD_Professional_v3.dir\objects1.rsp
-C:\msys64\mingw64\bin\g++.exe  -static -Wl,--whole-archive CMakeFiles\BYOVD_Professional_v3.dir/objects.a -Wl,--no-whole-archive -o BYOVD_Professional_v3.exe -Wl,--out-implib,libBYOVD_Professional_v3.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\BYOVD_Professional_v3.dir\linkLibs.rsp

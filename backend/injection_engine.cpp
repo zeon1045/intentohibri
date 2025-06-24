@@ -301,18 +301,20 @@ json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
     }
     
     CTLoader::CTParser parser;
-    if (!parser.loadFromFile(ctFilePath)) {
-        return {{"success", false}, {"message", "Error al cargar el archivo .CT."}};
+    CTLoader::CheatTable table;
+    CTLoader::CTError result = parser.parse(ctFilePath, table);
+
+    if (result != CTLoader::CT_SUCCESS) {
+        return {{"success", false}, {"message", "Formato no compatible. Error del parser: " + std::string(CTLoader::getErrorString(result))}};
     }
 
-    CTLoader::CheatTable& table = parser.getTable();
     cheatTableCache[ctFilePath] = table;
     
     json j_entries = json::array();
     for (size_t i = 0; i < table.entries.size(); i++) {
         const auto& entry = table.entries[i];
         j_entries.push_back({
-            {"id", i},
+            {"id", entry.id},
             {"description", entry.description},
             {"type", entry.type},
             {"address", entry.address},
@@ -330,17 +332,23 @@ json InjectionEngine::GetCheatTableEntriesFromContent(const std::string& ctConte
     }
     
     CTLoader::CTParser parser;
-    if (!parser.loadFromString(ctContent)) {
-        return {{"success", false}, {"message", "Error al parsear el contenido .CT."}};
+    CTLoader::CheatTable table;
+    // Llamamos a la nueva función que parsea desde un string
+    CTLoader::CTError result = parser.parseFromString(ctContent, table);
+
+    if (result != CTLoader::CT_SUCCESS) {
+        return {{"success", false}, {"message", "Formato no compatible. Error del parser: " + std::string(CTLoader::getErrorString(result))}};
     }
 
-    CTLoader::CheatTable& table = parser.getTable();
+    // Usar contenido truncado como clave del cache
+    std::string cache_key = ctContent.substr(0, std::min(ctContent.length(), size_t(100)));
+    cheatTableCache[cache_key] = table;
     
     json j_entries = json::array();
     for (size_t i = 0; i < table.entries.size(); i++) {
         const auto& entry = table.entries[i];
         j_entries.push_back({
-            {"id", i},
+            {"id", entry.id},
             {"description", entry.description},
             {"type", entry.type},
             {"address", entry.address},

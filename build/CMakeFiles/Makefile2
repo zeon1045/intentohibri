@@ -62,11 +62,11 @@ CMAKE_BINARY_DIR = C:\Users\mosta\Desktop\intentogibrido\build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/BYOVD_Professional_v3.dir/all
+all: CMakeFiles/Belzebub_Suite.dir/all
 .PHONY : all
 
 # The main recursive "codegen" target.
-codegen: CMakeFiles/BYOVD_Professional_v3.dir/codegen
+codegen: CMakeFiles/Belzebub_Suite.dir/codegen
 .PHONY : codegen
 
 # The main recursive "preinstall" target.
@@ -74,40 +74,40 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/BYOVD_Professional_v3.dir/clean
+clean: CMakeFiles/Belzebub_Suite.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/BYOVD_Professional_v3.dir
+# Target rules for target CMakeFiles/Belzebub_Suite.dir
 
 # All Build rule for target.
-CMakeFiles/BYOVD_Professional_v3.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Built target BYOVD_Professional_v3"
-.PHONY : CMakeFiles/BYOVD_Professional_v3.dir/all
+CMakeFiles/Belzebub_Suite.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub_Suite.dir\build.make CMakeFiles/Belzebub_Suite.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub_Suite.dir\build.make CMakeFiles/Belzebub_Suite.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Built target Belzebub_Suite"
+.PHONY : CMakeFiles/Belzebub_Suite.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/BYOVD_Professional_v3.dir/rule: cmake_check_build_system
+CMakeFiles/Belzebub_Suite.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles 6
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/BYOVD_Professional_v3.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/Belzebub_Suite.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles 0
-.PHONY : CMakeFiles/BYOVD_Professional_v3.dir/rule
+.PHONY : CMakeFiles/Belzebub_Suite.dir/rule
 
 # Convenience name for target.
-BYOVD_Professional_v3: CMakeFiles/BYOVD_Professional_v3.dir/rule
-.PHONY : BYOVD_Professional_v3
+Belzebub_Suite: CMakeFiles/Belzebub_Suite.dir/rule
+.PHONY : Belzebub_Suite
 
 # codegen rule for target.
-CMakeFiles/BYOVD_Professional_v3.dir/codegen:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Finished codegen for target BYOVD_Professional_v3"
-.PHONY : CMakeFiles/BYOVD_Professional_v3.dir/codegen
+CMakeFiles/Belzebub_Suite.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub_Suite.dir\build.make CMakeFiles/Belzebub_Suite.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=C:\Users\mosta\Desktop\intentogibrido\build\CMakeFiles --progress-num=1,2,3,4,5,6 "Finished codegen for target Belzebub_Suite"
+.PHONY : CMakeFiles/Belzebub_Suite.dir/codegen
 
 # clean rule for target.
-CMakeFiles/BYOVD_Professional_v3.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles\BYOVD_Professional_v3.dir\build.make CMakeFiles/BYOVD_Professional_v3.dir/clean
-.PHONY : CMakeFiles/BYOVD_Professional_v3.dir/clean
+CMakeFiles/Belzebub_Suite.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\Belzebub_Suite.dir\build.make CMakeFiles/Belzebub_Suite.dir/clean
+.PHONY : CMakeFiles/Belzebub_Suite.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

@@ -2,6 +2,8 @@
 #include <iostream>
 #include <algorithm>
 #include <cctype>
+#include <fstream>
+#include <sstream>
 
 namespace CTLoader {
 
@@ -129,15 +131,13 @@ namespace TypeConverter {
 // CTParser Implementation
 // ============================================================================
 
-std::string CTParser::extractTextBetween(const std::string& content, const std::string& start, const std::string& end) {
-    size_t startPos = content.find(start);
-    if (startPos == std::string::npos) return "";
-    
-    startPos += start.length();
-    size_t endPos = content.find(end, startPos);
-    if (endPos == std::string::npos) return "";
-    
-    return content.substr(startPos, endPos - startPos);
+std::string extractTextBetween(const std::string& content, const std::string& start, const std::string& end) {
+    size_t start_pos = content.find(start);
+    if (start_pos == std::string::npos) return "";
+    start_pos += start.length();
+    size_t end_pos = content.find(end, start_pos);
+    if (end_pos == std::string::npos) return "";
+    return content.substr(start_pos, end_pos - start_pos);
 }
 
 std::vector<std::string> CTParser::findAllBetween(const std::string& content, const std::string& start, const std::string& end) {
@@ -159,12 +159,12 @@ std::vector<std::string> CTParser::findAllBetween(const std::string& content, co
 MemoryEntry CTParser::parseMemoryEntry(const std::string& entryXml) {
     MemoryEntry entry;
     
-    entry.description = extractTextBetween(entryXml, "<Description>", "</Description>");
-    entry.address = extractTextBetween(entryXml, "<Address>", "</Address>");
-    entry.type = extractTextBetween(entryXml, "<VariableType>", "</VariableType>");
-    entry.value = extractTextBetween(entryXml, "<Value>", "</Value>");
+    entry.description = ::CTLoader::extractTextBetween(entryXml, "<Description>", "</Description>");
+    entry.address = ::CTLoader::extractTextBetween(entryXml, "<Address>", "</Address>");
+    entry.type = ::CTLoader::extractTextBetween(entryXml, "<VariableType>", "</VariableType>");
+    entry.value = ::CTLoader::extractTextBetween(entryXml, "<Value>", "</Value>");
     
-    std::string enabledStr = extractTextBetween(entryXml, "<Active>", "</Active>");
+    std::string enabledStr = ::CTLoader::extractTextBetween(entryXml, "<Active>", "</Active>");
     entry.enabled = (enabledStr == "1" || enabledStr == "true");
     
     // Parse children entries
@@ -179,13 +179,13 @@ MemoryEntry CTParser::parseMemoryEntry(const std::string& entryXml) {
 LuaScript CTParser::parseLuaScript(const std::string& scriptXml) {
     LuaScript script;
     
-    script.name = extractTextBetween(scriptXml, "<Name>", "</Name>");
+    script.name = ::CTLoader::extractTextBetween(scriptXml, "<n>", "</n>");
     
-    std::string enabledStr = extractTextBetween(scriptXml, "<Enabled>", "</Enabled>");
+    std::string enabledStr = ::CTLoader::extractTextBetween(scriptXml, "<Enabled>", "</Enabled>");
     script.enabled = (enabledStr == "1" || enabledStr == "true");
     
     // El código Lua está usualmente en base64
-    std::string encodedCode = extractTextBetween(scriptXml, "<LuaScript>", "</LuaScript>");
+    std::string encodedCode = ::CTLoader::extractTextBetween(scriptXml, "<LuaScript>", "</LuaScript>");
     script.code = decodeBase64(encodedCode);
     
     return script;
@@ -232,14 +232,18 @@ bool CTParser::parseXML() {
     if (xmlContent.empty()) return false;
     
     // Parse basic table info
-    table.title = extractTextBetween(xmlContent, "<Title>", "</Title>");
-    table.game_name = extractTextBetween(xmlContent, "<GameName>", "</GameName>");
-    table.version = extractTextBetween(xmlContent, "<Version>", "</Version>");
+    table.title = ::CTLoader::extractTextBetween(xmlContent, "<Title>", "</Title>");
+    table.game_name = ::CTLoader::extractTextBetween(xmlContent, "<GameName>", "</GameName>");
+    table.version = ::CTLoader::extractTextBetween(xmlContent, "<Version>", "</Version>");
     
-    // Parse memory entries
-    std::vector<std::string> entries = findAllBetween(xmlContent, "<CheatEntry>", "</CheatEntry>");
-    for (const auto& entryXml : entries) {
-        table.entries.push_back(parseMemoryEntry(entryXml));
+    // Parse memory entries usando la nueva función recursiva
+    size_t entries_start = xmlContent.find("<CheatEntries>");
+    if (entries_start != std::string::npos) {
+        size_t entries_end = xmlContent.find("</CheatEntries>", entries_start);
+        if (entries_end != std::string::npos) {
+            std::string main_entries_block = xmlContent.substr(entries_start + 14, entries_end - (entries_start + 14));
+            parseEntriesRecursive(main_entries_block, table.entries);
+        }
     }
     
     // Parse Lua scripts
@@ -408,6 +412,87 @@ const char* getErrorString(CTError error) {
         case CT_PROCESS_ERROR: return "Error de proceso";
         default: return "Error desconocido";
     }
+}
+
+// NUEVA FUNCIÓN RECURSIVA para parsear entradas anidadas
+void CTParser::parseEntriesRecursive(const std::string& block, std::vector<MemoryEntry>& entries) {
+    size_t current_pos = 0;
+    while (true) {
+        size_t entry_start = block.find("<CheatEntry>", current_pos);
+        if (entry_start == std::string::npos) break;
+
+        size_t entry_end = block.find("</CheatEntry>", entry_start);
+        if (entry_end == std::string::npos) break;
+
+        std::string entry_block = block.substr(entry_start + 12, entry_end - (entry_start + 12));
+        
+        MemoryEntry new_entry = {}; // Inicializar a cero/vacío
+        
+        std::string id_str = extractTextBetween(entry_block, "<ID>", "</ID>");
+        if (!id_str.empty()) new_entry.id = std::stoi(id_str);
+
+        std::string desc_raw = extractTextBetween(entry_block, "<Description>", "</Description>");
+        if (desc_raw.length() > 1 && desc_raw.front() == '"') {
+            new_entry.description = desc_raw.substr(1, desc_raw.length() - 2);
+        } else {
+            new_entry.description = desc_raw;
+        }
+
+        new_entry.type = extractTextBetween(entry_block, "<VariableType>", "</VariableType>");
+        new_entry.address = extractTextBetween(entry_block, "<Address>", "</Address>");
+        new_entry.value = extractTextBetween(entry_block, "<Value>", "</Value>");
+
+        // Lógica recursiva: buscar entradas hijas DENTRO de la entrada actual
+        size_t children_start = entry_block.find("<CheatEntries>");
+        if (children_start != std::string::npos) {
+            size_t children_end = entry_block.find("</CheatEntries>", children_start);
+            if (children_end != std::string::npos) {
+                std::string children_block = entry_block.substr(children_start + 14, children_end - (children_start + 14));
+                parseEntriesRecursive(children_block, new_entry.children);
+            }
+        }
+        
+        entries.push_back(new_entry);
+        current_pos = entry_end + 13;
+    }
+}
+
+// NUEVA FUNCIÓN para parsear desde un string de contenido
+CTError CTParser::parseFromString(const std::string& content, CheatTable& out_table) {
+    if (!XMLUtils::isValidXML(content)) {
+        return CT_INVALID_XML;
+    }
+    
+    out_table = {}; // Limpiar la tabla de salida
+    
+    size_t entries_start = content.find("<CheatEntries>");
+    if (entries_start == std::string::npos) {
+        return CT_PARSE_ERROR; // No se encontró el bloque principal de entradas
+    }
+    size_t entries_end = content.find("</CheatEntries>", entries_start);
+    if (entries_end == std::string::npos) {
+        return CT_PARSE_ERROR;
+    }
+
+    std::string main_entries_block = content.substr(entries_start + 14, entries_end - (entries_start + 14));
+    
+    parseEntriesRecursive(main_entries_block, out_table.entries);
+
+    if (out_table.entries.empty()) {
+        return CT_PARSE_ERROR;
+    }
+
+    return CT_SUCCESS;
+}
+
+// La función original ahora usa la nueva lógica
+CTError CTParser::parse(const std::string& filename, CheatTable& out_table) {
+    std::ifstream file(filename);
+    if (!file) {
+        return CT_FILE_NOT_FOUND;
+    }
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    return parseFromString(content, out_table);
 }
 
 } // namespace CTLoader 

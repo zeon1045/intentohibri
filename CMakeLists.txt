@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(BYOVD_Professional_v3)
+project(Belzebub_Suite)
 
 # Usar C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -12,20 +12,16 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/libs
 )
 
-# --- Lista de TODOS los archivos fuente necesarios ---
-set(SOURCES
-    backend/main.cpp
-    backend/injection_engine.cpp
-    backend/privilege_manager.cpp  # <-- Crítico para privilegios
-    backend/utils.cpp              # <-- Utilidades del sistema
-    backend/ct_loader.cpp          # <-- Parser de Cheat Tables
-)
+# --- DETECCIÓN AUTOMÁTICA DE ARCHIVOS FUENTE ---
+# Esta línea busca todos los archivos .cpp dentro de la carpeta backend
+# y los añade a la variable SOURCES. A prueba de futuros olvidos.
+file(GLOB_RECURSE SOURCES "backend/*.cpp")
 
-# Crear ejecutable
-add_executable(BYOVD_Professional_v3 ${SOURCES})
+# Crear el ejecutable principal con todos los fuentes encontrados
+add_executable(Belzebub_Suite ${SOURCES})
 
-# Librerías de Windows necesarias para Belzebub Professional
-target_link_libraries(BYOVD_Professional_v3
+# Enlazar las bibliotecas de Windows necesarias
+target_link_libraries(Belzebub_Suite
     ws2_32      # Para networking (httplib)
     advapi32    # Para servicios y privilegios (SCM)
     shell32     # Para APIs de Shell de Windows

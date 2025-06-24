@@ -150,5 +150,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/BYOVD_Professional_v3.dir/DependInfo.cmake"
+  "CMakeFiles/Belzebub_Suite.dir/DependInfo.cmake"
   )

@@ -17,6 +17,9 @@ include_directories(
 # y los añade a la variable SOURCES. A prueba de futuros olvidos.
 file(GLOB_RECURSE SOURCES "backend/*.cpp")
 
+# Muestra los archivos encontrados para depuración
+message(STATUS "Archivos fuente encontrados: ${SOURCES}")
+
 # Crear el ejecutable principal con todos los fuentes encontrados
 add_executable(Belzebub_Suite ${SOURCES})
 

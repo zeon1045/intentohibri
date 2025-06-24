@@ -18,6 +18,9 @@
 
 using json = nlohmann::json;
 
+// Forward declarations
+struct DriverInfo;
+
 // Estructura de información del driver
 struct DriverInfo {
     std::string name;
@@ -42,7 +45,6 @@ struct ProcessInfo {
 using CTLoader::MemoryEntry;
 using CTLoader::CheatTable;
 using CTLoader::CTParser;
-using CTLoader::CTError;
 
 // Declaración de la clase InjectionEngine
 class InjectionEngine {

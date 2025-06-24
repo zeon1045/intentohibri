@@ -278,22 +278,35 @@
             const list = document.getElementById('cheatEntries');
             list.innerHTML = '';
             if (!entries || entries.length === 0) {
-                list.innerHTML = '<li>No se encontraron entradas válidas en la tabla.</li>';
+                list.innerHTML = '<li>Cargue una tabla para ver las entradas.</li>';
                 return;
             }
-            entries.forEach(entry => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div class="cheat-entry-item">
-                        <div>
-                            <strong>${entry.description}</strong>
-                            <small style="color: var(--text-muted); display: block;">${entry.type} - ${entry.address}</small>
+            
+            // Función de ayuda recursiva para renderizar
+            const createEntryList = (entryArray, level = 0) => {
+                const ul = document.createElement('ul');
+                if (level > 0) ul.style.marginLeft = '20px';
+                entryArray.forEach(entry => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="cheat-entry-item">
+                            <div>
+                                <strong class="cheat-desc">${entry.description}</strong>
+                                <small style="color: var(--text-muted); display: block;">Tipo: ${entry.type || 'N/A'} ${entry.address ? '- ' + entry.address : ''}</small>
+                            </div>
+                            <input type="checkbox" class="cheat-toggle" data-entry-id="${entry.id}">
                         </div>
-                        <input type="checkbox" class="cheat-toggle" ${entry.enabled ? 'checked' : ''}>
-                    </div>
-                `;
-                list.appendChild(li);
-            });
+                    `;
+                    // Si hay hijos, renderizarlos de forma recursiva
+                    if (entry.children && entry.children.length > 0) {
+                        li.appendChild(createEntryList(entry.children, level + 1));
+                    }
+                    ul.appendChild(li);
+                });
+                return ul;
+            };
+
+            list.appendChild(createEntryList(entries));
         }
 
         function filterProcesses() {

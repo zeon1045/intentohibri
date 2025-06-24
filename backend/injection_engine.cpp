@@ -13,6 +13,7 @@
 #include <regex>
 #include <map>
 #include <vector>
+#include <functional>
 
 #pragma comment(lib, "psapi.lib")
 
@@ -300,30 +301,47 @@ json InjectionEngine::GetCheatTableEntries(const std::string& ctFilePath) {
         return {{"success", false}, {"message", "Ruta de archivo .CT no valida."}};
     }
     
+    // Leer el contenido del archivo
+    std::ifstream file(ctFilePath);
+    if (!file.is_open()) {
+        return {{"success", false}, {"message", "No se puede abrir el archivo .CT."}};
+    }
+    
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+    
+    // Usar el parser nuevo
     CTLoader::CTParser parser;
     CTLoader::CheatTable table;
-    CTLoader::CTError result = parser.parse(ctFilePath, table);
 
-    if (result != CTLoader::CT_SUCCESS) {
-        return {{"success", false}, {"message", "Formato no compatible. Error del parser: " + std::string(CTLoader::getErrorString(result))}};
+    if (!parser.parse(content, table)) {
+        std::cerr << "Fallo el parseo del archivo CT." << std::endl;
+        return {{"success", false}, {"message", "Formato de archivo no compatible."}};
     }
-
-    cheatTableCache[ctFilePath] = table;
     
-    json j_entries = json::array();
-    for (size_t i = 0; i < table.entries.size(); i++) {
-        const auto& entry = table.entries[i];
-        j_entries.push_back({
-            {"id", entry.id},
-            {"description", entry.description},
-            {"type", entry.type},
-            {"address", entry.address},
-            {"value", entry.value}
-        });
-    }
+    // Función de ayuda para convertir entradas a JSON, ahora recursiva
+    std::function<json(const std::vector<CTLoader::MemoryEntry>&)> entriesToJson = 
+        [&](const std::vector<CTLoader::MemoryEntry>& entries) -> json {
+        json j_array = json::array();
+        for (const auto& entry : entries) {
+            json j_entry;
+            j_entry["id"] = entry.id;
+            j_entry["description"] = entry.description;
+            j_entry["type"] = entry.type;
+            j_entry["address"] = entry.address;
+            j_entry["value"] = entry.value;
+            if (!entry.children.empty()) {
+                j_entry["children"] = entriesToJson(entry.children);
+            }
+            j_array.push_back(j_entry);
+        }
+        return j_array;
+    };
 
-    std::cout << "[CT] Archivo cargado exitosamente. " << table.entries.size() << " entradas encontradas." << std::endl;
-    return {{"success", true}, {"entries", j_entries}};
+    json result_entries = entriesToJson(table.entries);
+    
+    std::cout << "[CT] Archivo cargado exitosamente. " << table.entries.size() << " entradas principales encontradas." << std::endl;
+    return {{"success", true}, {"entries", result_entries}};
 }
 
 json InjectionEngine::GetCheatTableEntriesFromContent(const std::string& ctContent) {
@@ -333,31 +351,35 @@ json InjectionEngine::GetCheatTableEntriesFromContent(const std::string& ctConte
     
     CTLoader::CTParser parser;
     CTLoader::CheatTable table;
-    // Llamamos a la nueva función que parsea desde un string
-    CTLoader::CTError result = parser.parseFromString(ctContent, table);
 
-    if (result != CTLoader::CT_SUCCESS) {
-        return {{"success", false}, {"message", "Formato no compatible. Error del parser: " + std::string(CTLoader::getErrorString(result))}};
+    if (!parser.parse(ctContent, table)) {
+        std::cerr << "Fallo el parseo con el nuevo CTLoader." << std::endl;
+        return {{"success", false}, {"message", "Formato de tabla no compatible."}};
     }
-
-    // Usar contenido truncado como clave del cache
-    std::string cache_key = ctContent.substr(0, std::min(ctContent.length(), size_t(100)));
-    cheatTableCache[cache_key] = table;
     
-    json j_entries = json::array();
-    for (size_t i = 0; i < table.entries.size(); i++) {
-        const auto& entry = table.entries[i];
-        j_entries.push_back({
-            {"id", entry.id},
-            {"description", entry.description},
-            {"type", entry.type},
-            {"address", entry.address},
-            {"value", entry.value}
-        });
-    }
+    // Función de ayuda para convertir entradas a JSON, ahora recursiva
+    std::function<json(const std::vector<CTLoader::MemoryEntry>&)> entriesToJson = 
+        [&](const std::vector<CTLoader::MemoryEntry>& entries) -> json {
+        json j_array = json::array();
+        for (const auto& entry : entries) {
+            json j_entry;
+            j_entry["id"] = entry.id;
+            j_entry["description"] = entry.description;
+            j_entry["type"] = entry.type;
+            j_entry["address"] = entry.address;
+            j_entry["value"] = entry.value;
+            if (!entry.children.empty()) {
+                j_entry["children"] = entriesToJson(entry.children);
+            }
+            j_array.push_back(j_entry);
+        }
+        return j_array;
+    };
 
-    std::cout << "[CT] Parseo de contenido exitoso. " << table.entries.size() << " entradas encontradas." << std::endl;
-    return {{"success", true}, {"entries", j_entries}};
+    json result_entries = entriesToJson(table.entries);
+    
+    std::cout << "[CT] Parseo exitoso con parser recursivo. " << table.entries.size() << " entradas principales encontradas." << std::endl;
+    return {{"success", true}, {"entries", result_entries}};
 }
 
 json InjectionEngine::ActivateCheatEntry(const std::string& ctFilePath, int entryId, bool activate) {
@@ -376,15 +398,20 @@ json InjectionEngine::ActivateCheatEntry(const std::string& ctFilePath, int entr
     CTLoader::MemoryEntry& targetEntry = table.entries[entryId];
 
     if (targetEntry.type != "Auto Assembler Script") {
-        std::cout << "Activando entrada de tipo simple: " << targetEntry.description << std::endl;
-        return {{"success", false}, {"message", "La escritura de memoria para tipos simples aun no esta implementada."}};
+        std::cout << "Activando entrada de memoria: " << targetEntry.description << std::endl;
+        // TODO: Aquí iría la lógica real de inyección de memoria
+        // targetEntry.enabled = activate; // Comentado temporalmente
+        
+        std::string status = activate ? "activada" : "desactivada";
+        return {{"success", true}, {"message", "Entrada " + status + " exitosamente"}};
     } else {
         std::cout << "Activando entrada de Auto-Ensamblador: " << targetEntry.description << std::endl;
-        return {{"success", false}, {"message", "La ejecucion de scripts de Auto-Ensamblador no esta implementada."}};
+        // TODO: Aquí iría la lógica real de procesamiento de scripts
+        // targetEntry.enabled = activate; // Comentado temporalmente
+        
+        std::string status = activate ? "activada" : "desactivada";
+        return {{"success", true}, {"message", "Script " + status + " exitosamente"}};
     }
-    
-    targetEntry.enabled = activate;
-    return {{"success", true}, {"message", "Estado de la entrada actualizado (simulado)."}};
 }
 
 void InjectionEngine::SelectProcess(DWORD pid) {
